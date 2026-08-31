@@ -1,0 +1,2 @@
+alter table public.diagnostic_questionnaires
+  drop constraint diagnostic_questionnaires_slug_key;
