@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      company_registrations: {
+        Row: {
+          company_name: string
+          contact_name: string
+          created_at: string
+          created_by: string
+          email: string
+          email_normalized: string | null
+          id: string
+          linked_at: string | null
+          linked_user_id: string | null
+          organization_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          contact_name: string
+          created_at?: string
+          created_by: string
+          email: string
+          email_normalized?: string | null
+          id?: string
+          linked_at?: string | null
+          linked_user_id?: string | null
+          organization_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          contact_name?: string
+          created_at?: string
+          created_by?: string
+          email?: string
+          email_normalized?: string | null
+          id?: string
+          linked_at?: string | null
+          linked_user_id?: string | null
+          organization_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [{ foreignKeyName: "company_registrations_organization_id_fkey"; columns: ["organization_id"]; isOneToOne: false; referencedRelation: "organizations"; referencedColumns: ["id"] }]
+      }
       diagnostic_question_dependencies: {
         Row: { child_question_id: string; max_value: number; min_value: number; parent_question_id: string }
         Insert: { child_question_id: string; max_value?: number; min_value?: number; parent_question_id: string }
@@ -171,7 +216,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_register_company: {
+        Args: { p_company_name: string; p_contact_name: string; p_email: string }
+        Returns: string
+      }
     }
     Enums: {
       organization_role:
