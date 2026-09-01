@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { AuthMessage } from "@/components/auth/message";
 import { SubmitButton } from "@/components/auth/submit-button";
+import { PasswordField } from "@/components/auth/password-field";
 import { register } from "../actions";
 
 export const metadata: Metadata = { title: "Crear cuenta" };
@@ -14,8 +15,8 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
       <form action={register} className="form-stack">
         <AuthMessage error={params.error} />
         <div className="field"><label htmlFor="email">Correo profesional</label><input id="email" name="email" type="email" autoComplete="email" required placeholder="tu@empresa.es" /></div>
-        <div className="field"><label htmlFor="password">Contraseña</label><input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} aria-describedby="password-help" /><small id="password-help">Mínimo 8 caracteres.</small></div>
-        <div className="field"><label htmlFor="passwordConfirmation">Repite la contraseña</label><input id="passwordConfirmation" name="passwordConfirmation" type="password" autoComplete="new-password" required minLength={8} /></div>
+        <PasswordField id="password" label="Contraseña" autoComplete="new-password" minLength={8} help="Mínimo 8 caracteres." />
+        <PasswordField id="passwordConfirmation" label="Repite la contraseña" autoComplete="new-password" minLength={8} />
         <SubmitButton pendingLabel="Creando cuenta…">Crear cuenta</SubmitButton>
       </form>
     </AuthShell>

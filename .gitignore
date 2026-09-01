@@ -8,3 +8,5 @@ out/
 coverage/
 *.tsbuildinfo
 supabase/.temp/
+
+.vercel

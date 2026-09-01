@@ -73,6 +73,11 @@ a { color: inherit; text-decoration: none; }
 .field input { width: 100%; min-height: 3rem; padding: 0.75rem 0.9rem; color: var(--ink-950); border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fbfdfc; }
 .field input:hover { border-color: #adc0bd; }
 .field input:focus { border-color: var(--accent); outline: 3px solid rgb(24 166 166 / 0.12); }
+.password-control { position: relative; }
+.password-control input { padding-right: 3.15rem; }
+.password-control button { position: absolute; top: 50%; right: 0.45rem; width: 2.15rem; height: 2.15rem; padding: 0; display: grid; place-items: center; transform: translateY(-50%); border: 0; border-radius: 0.45rem; color: var(--ink-600); background: transparent; cursor: pointer; }
+.password-control button:hover { color: var(--ink-950); background: var(--accent-soft); }
+.password-control button:focus-visible { outline: 3px solid rgb(24 166 166 / 0.3); outline-offset: 1px; }
 .form-row { display: flex; justify-content: space-between; gap: 1rem; align-items: center; font-size: 0.88rem; }
 .text-link { color: #087e80; font-weight: 650; }
 .text-link:hover { text-decoration: underline; text-underline-offset: 3px; }

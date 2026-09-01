@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { AuthMessage } from "@/components/auth/message";
 import { SubmitButton } from "@/components/auth/submit-button";
+import { PasswordField } from "@/components/auth/password-field";
 import { updatePassword } from "../actions";
 
 export const metadata: Metadata = { title: "Actualizar contraseña" };
@@ -13,8 +14,8 @@ export default async function UpdatePasswordPage({ searchParams }: { searchParam
     <AuthShell title="Elige una nueva contraseña" description="Utiliza una contraseña nueva de al menos 8 caracteres." footer={<Link className="text-link" href="/login">Volver al acceso</Link>}>
       <form action={updatePassword} className="form-stack">
         <AuthMessage error={params.error} />
-        <div className="field"><label htmlFor="password">Nueva contraseña</label><input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} /></div>
-        <div className="field"><label htmlFor="passwordConfirmation">Repite la contraseña</label><input id="passwordConfirmation" name="passwordConfirmation" type="password" autoComplete="new-password" required minLength={8} /></div>
+        <PasswordField id="password" label="Nueva contraseña" autoComplete="new-password" minLength={8} />
+        <PasswordField id="passwordConfirmation" label="Repite la contraseña" autoComplete="new-password" minLength={8} />
         <SubmitButton pendingLabel="Guardando…">Guardar nueva contraseña</SubmitButton>
       </form>
     </AuthShell>
