@@ -6,7 +6,7 @@ import { useState } from "react";
 import {
   BookOpen, Building2, ChartNoAxesCombined, CheckSquare2, ChevronDown,
   ClipboardCheck, FolderKanban, LayoutDashboard, LogOut, Menu, Route,
-  Settings2, Wrench, X,
+  Settings2, UserRound, Wrench, X,
   ShieldCheck,
 } from "lucide-react";
 import { logout } from "@/app/app/actions";
@@ -15,6 +15,7 @@ import { BrandLogo } from "@/components/brand-logo";
 const navItems = [
   { href: "/app", label: "Inicio", icon: LayoutDashboard },
   { href: "/app/perfil", label: "Mi empresa", icon: Building2 },
+  { href: "/app/configuracion", label: "Mi perfil", icon: UserRound },
   { href: "/app/diagnostico", label: "Diagnóstico", icon: ClipboardCheck },
   { href: "/app/evolucion", label: "Evolución", icon: ChartNoAxesCombined },
   { href: "/app/herramientas", label: "Herramientas", icon: Wrench },
@@ -63,7 +64,7 @@ export function AppShell({ children, email, fullName, organizationName, isAdmin 
         </div>
       </aside>
       <div className="app-main">
-        <header className="topbar"><button className="icon-button menu-button" onClick={() => setOpen(true)} aria-label="Abrir menú"><Menu size={22} /></button><div><small>{company.toUpperCase()}</small><strong>{activeLabel}</strong></div><button className="icon-button" aria-label="Configuración" disabled><Settings2 size={20} /></button></header>
+        <header className="topbar"><button className="icon-button menu-button" onClick={() => setOpen(true)} aria-label="Abrir menú"><Menu size={22} /></button><div><small>{company.toUpperCase()}</small><strong>{activeLabel}</strong></div><Link className="icon-button" href="/app/configuracion" aria-label="Configuración de perfil"><Settings2 size={20} /></Link></header>
         {children}
       </div>
     </div>

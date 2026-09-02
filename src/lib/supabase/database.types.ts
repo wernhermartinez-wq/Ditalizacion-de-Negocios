@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_profiles: {
+        Row: {
+          address_line_1: string
+          address_line_2: string | null
+          city: string
+          country: string
+          created_at: string
+          identification_type: string
+          phone: string | null
+          postal_code: string
+          province: string | null
+          tax_identifier: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_line_1: string
+          address_line_2?: string | null
+          city: string
+          country?: string
+          created_at?: string
+          identification_type: string
+          phone?: string | null
+          postal_code: string
+          province?: string | null
+          tax_identifier: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_line_1?: string
+          address_line_2?: string | null
+          city?: string
+          country?: string
+          created_at?: string
+          identification_type?: string
+          phone?: string | null
+          postal_code?: string
+          province?: string | null
+          tax_identifier?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       company_registrations: {
         Row: {
           company_name: string

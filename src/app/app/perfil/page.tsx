@@ -51,7 +51,7 @@ export default async function CompanyProfilePage({ searchParams }: PageProps) {
         </div>
         <AuthMessage error={params.error} success={params.success} />
         <form action={saveOrganization} className="company-form">
-          <div className="field field-wide"><label htmlFor="fullName">Tu nombre completo *</label><input id="fullName" name="fullName" required minLength={2} maxLength={120} defaultValue={profileResult.data?.full_name ?? ""} autoComplete="name" /></div>
+          {!profileResult.data && <div className="field field-wide"><label htmlFor="fullName">Tu nombre completo *</label><input id="fullName" name="fullName" required minLength={2} maxLength={120} autoComplete="name" /></div>}
           <div className="field"><label htmlFor="name">Nombre comercial *</label><input id="name" name="name" required minLength={2} maxLength={120} defaultValue={organization?.name ?? ""} autoComplete="organization" /></div>
           <div className="field"><label htmlFor="legalName">Razón social</label><input id="legalName" name="legalName" maxLength={160} defaultValue={organization?.legal_name ?? ""} /></div>
           <div className="field"><label htmlFor="taxIdentifier">NIF/CIF</label><input id="taxIdentifier" name="taxIdentifier" maxLength={32} defaultValue={organization?.tax_identifier ?? ""} autoCapitalize="characters" /></div>
@@ -60,7 +60,7 @@ export default async function CompanyProfilePage({ searchParams }: PageProps) {
           <div className="field"><label htmlFor="city">Ciudad</label><input id="city" name="city" maxLength={100} defaultValue={organization?.city ?? ""} autoComplete="address-level2" /></div>
           <div className="field"><label htmlFor="country">País *</label><input id="country" name="country" required minLength={2} maxLength={80} defaultValue={organization?.country ?? "España"} autoComplete="country-name" /></div>
           <div className="field field-wide"><label htmlFor="website">Sitio web</label><input id="website" name="website" maxLength={240} defaultValue={organization?.website ?? ""} placeholder="www.tuempresa.com" autoComplete="url" /></div>
-          <div className="company-form-actions"><p>Podrás actualizar estos datos cuando lo necesites.</p><SubmitButton pendingLabel="Guardando…">{organization ? "Guardar cambios" : "Crear mi empresa"}</SubmitButton></div>
+          <div className="company-form-actions"><p>Los datos personales y de facturación se gestionan desde Mi perfil.</p><SubmitButton pendingLabel="Guardando…">{organization ? "Guardar cambios" : "Crear mi empresa"}</SubmitButton></div>
         </form>
       </section>
     </main>

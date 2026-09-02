@@ -28,7 +28,7 @@
 * { box-sizing: border-box; }
 html { background: var(--paper); scroll-behavior: smooth; }
 body { margin: 0; color: var(--ink-950); background: var(--paper); font-family: var(--font-body); }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 a { color: inherit; text-decoration: none; }
 ::selection { color: var(--ink-950); background: #f4b27f; }
 
@@ -77,9 +77,11 @@ a { color: inherit; text-decoration: none; }
 .form-stack { display: grid; gap: 1rem; }
 .field { display: grid; gap: 0.45rem; }
 .field label { font-size: 0.86rem; font-weight: 650; }
-.field input { width: 100%; min-height: 3rem; padding: 0.75rem 0.9rem; color: var(--ink-950); border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fffaf3; }
-.field input:hover { border-color: #c9b69d; }
-.field input:focus { border-color: var(--accent); outline: 3px solid rgb(211 90 61 / 0.12); }
+.field input, .field select { width: 100%; min-height: 3rem; padding: 0.75rem 0.9rem; color: var(--ink-950); border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fffaf3; }
+.field select { cursor: pointer; }
+.field input:hover, .field select:hover { border-color: #c9b69d; }
+.field input:focus, .field select:focus { border-color: var(--accent); outline: 3px solid rgb(211 90 61 / 0.12); }
+.field input[readonly] { color: var(--ink-600); background: #eee5d9; cursor: not-allowed; }
 .password-control { position: relative; }
 .password-control input { padding-right: 3.15rem; }
 .password-control button { position: absolute; top: 50%; right: 0.45rem; width: 2.15rem; height: 2.15rem; padding: 0; display: grid; place-items: center; transform: translateY(-50%); border: 0; border-radius: 0.45rem; color: var(--ink-600); background: transparent; cursor: pointer; }

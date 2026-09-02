@@ -161,7 +161,10 @@
 .company-form-card .form-message { margin-bottom: 1.25rem; }
 .company-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; }
 .company-form .field-wide { grid-column: 1 / -1; }
-.company-form .field input { background: white; }
+.company-form .field input, .company-form .field select { background: white; }
+.profile-form-section { grid-column: 1 / -1; display: flex; gap: 0.7rem; align-items: center; margin-top: 0.45rem; padding: 1rem 0 0.2rem; border-top: 1px solid var(--line); color: var(--accent-strong); }
+.profile-form-section h3 { margin: 0; color: var(--ink-950); font: 650 0.95rem var(--font-display); }
+.profile-form-section p { margin: 0.18rem 0 0; color: var(--ink-600); font-size: 0.74rem; }
 .company-form-actions { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding-top: 0.5rem; border-top: 1px solid var(--line); }
 .company-form-actions p { margin: 0; color: var(--ink-600); font-size: 0.78rem; }
 .company-form-actions .button-primary { min-width: 11rem; }
@@ -376,6 +379,7 @@
   .tasks-card { overflow: hidden; }
   .company-form { grid-template-columns: 1fr; }
   .company-form .field-wide { grid-column: auto; }
+  .profile-form-section { grid-column: auto; }
   .company-form-actions { grid-column: auto; align-items: stretch; flex-direction: column; }
   .company-form-actions .button-primary { width: 100%; }
   .workspace-confirmation { grid-template-columns: auto 1fr; }
@@ -421,7 +425,8 @@
 .progress-ring::after { background: var(--surface); }
 .activity-avatar, .honest-empty-icon, .state-visual { color: var(--accent-strong); }
 .tool-item, .diagnostic-scale-key > div, .diagnostic-scale label > span { border-color: var(--line); background: #fffaf3; }
-.card, .state-card, .secondary-action, .company-form .field input { background: var(--surface); }
+.card, .state-card, .secondary-action, .company-form .field input, .company-form .field select { background: var(--surface); }
+.company-form .field input[readonly] { background: #eee5d9; }
 .next-step-card, .task-phase > header, .client-work-log > header { background: #faf4ea; }
 .next-step-marker { background: var(--surface); }
 .state-banner { background: color-mix(in srgb, var(--state-color) 8%, var(--surface)); }

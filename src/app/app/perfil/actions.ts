@@ -22,7 +22,6 @@ export async function saveOrganization(formData: FormData) {
   const userId = typeof data?.claims?.sub === "string" ? data.claims.sub : null;
   if (claimsError || !userId) redirect("/login");
 
-  const fullName = field(formData, "fullName", 120);
   const name = field(formData, "name", 120);
   const legalName = field(formData, "legalName", 160);
   const taxIdentifier = field(formData, "taxIdentifier", 32).toUpperCase();
@@ -32,9 +31,7 @@ export async function saveOrganization(formData: FormData) {
   const websiteInput = field(formData, "website", 240);
   const employeeInput = field(formData, "employeeCount", 7);
 
-  if (fullName.length < 2 || name.length < 2) {
-    profileMessage("error", "Indica tu nombre y el nombre comercial de la empresa.");
-  }
+  if (name.length < 2) profileMessage("error", "Indica el nombre comercial de la empresa.");
 
   const employeeCount = employeeInput ? Number(employeeInput) : null;
   if (employeeCount !== null && (!Number.isInteger(employeeCount) || employeeCount < 1 || employeeCount > 1_000_000)) {
@@ -59,10 +56,12 @@ export async function saveOrganization(formData: FormData) {
     .maybeSingle();
   if (profileReadError) profileMessage("error", "No se pudo comprobar tu perfil.");
 
-  const profileResult = existingProfile
-    ? await supabase.from("profiles").update({ full_name: fullName, updated_at: new Date().toISOString() }).eq("user_id", userId)
-    : await supabase.from("profiles").insert({ user_id: userId, full_name: fullName });
-  if (profileResult.error) profileMessage("error", "No se pudo guardar tu nombre.");
+  if (!existingProfile) {
+    const fullName = field(formData, "fullName", 120);
+    if (fullName.length < 2) profileMessage("error", "Indica tu nombre completo.");
+    const { error } = await supabase.from("profiles").insert({ user_id: userId, full_name: fullName });
+    if (error) profileMessage("error", "No se pudo guardar tu nombre.");
+  }
 
   const organizationData = {
     name,
