@@ -32,8 +32,8 @@ export function DiagnosticQuestionnaire({
       <section className="card diagnostic-method" aria-labelledby="diagnostic-method-title">
         <div>
           <p className="eyebrow">Cómo responder</p>
-          <h2 id="diagnostic-method-title">Elige la descripción que puedas sostener con hechos</h2>
-          <p>Responde por la práctica habitual de los últimos 12 meses. Algunas preguntas aparecen solo si una respuesta anterior confirma que esa práctica existe.</p>
+          <h2 id="diagnostic-method-title">Elige la opción que más se parezca a tu situación real</h2>
+          <p>Piensa en cómo trabajas hoy, no en lo que te gustaría hacer. Usa “No aplica” solo cuando esa actividad no forme parte de tu negocio; si podría ayudarte pero todavía no la haces, responde “No lo hacemos”.</p>
         </div>
         <div className="diagnostic-scale-key">
           {maturityScale.map((option) => (
@@ -81,7 +81,7 @@ export function DiagnosticQuestionnaire({
                             checked={answers[question.id] === option.value}
                             onChange={() => setAnswers((current) => ({ ...current, [question.id]: option.value }))}
                           />
-                          <span><b>{option.value === 0 ? "—" : option.value}</b><small>{option.short}</small></span>
+                          <span><b>{option.short}</b></span>
                         </label>
                       ))}
                     </div>

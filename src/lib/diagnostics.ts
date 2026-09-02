@@ -19,12 +19,12 @@ const legacyDiagnosticDimensions = [
 ] as const;
 
 export const maturityScale = [
-  { value: 0, label: "No aplica", short: "N/A", description: "La práctica no corresponde a la actividad de la empresa." },
-  { value: 1, label: "No existe", short: "No existe", description: "No se realiza o no hay evidencia de que se realice." },
-  { value: 2, label: "Inicial", short: "Inicial", description: "Se hace de manera informal, reactiva o en casos aislados." },
-  { value: 3, label: "Definido", short: "Definido", description: "Existe un método claro, pero no se aplica todavía en toda la empresa." },
-  { value: 4, label: "Medido", short: "Medido", description: "Se aplica de forma consistente y se revisa con datos o responsables." },
-  { value: 5, label: "Optimizado", short: "Optimizado", description: "Está integrado, demuestra resultados y se mejora periódicamente." },
+  { value: 0, label: "No aplica", short: "No aplica", description: "Esta actividad no forma parte de tu negocio." },
+  { value: 1, label: "No lo hacemos", short: "No lo hacemos", description: "No se hace actualmente." },
+  { value: 2, label: "A veces", short: "A veces", description: "Se hace de forma puntual o depende de que alguien se acuerde." },
+  { value: 3, label: "Habitualmente", short: "Habitualmente", description: "Hay una forma de hacerlo y se usa en la mayoría de los casos." },
+  { value: 4, label: "Siempre y revisado", short: "Siempre y revisado", description: "Se hace siempre y alguien comprueba que funcione." },
+  { value: 5, label: "Medimos y mejoramos", short: "Medimos y mejoramos", description: "Revisamos el resultado y hacemos cambios para mejorarlo." },
 ] as const;
 
 export type DiagnosticQuestion = Tables<"diagnostic_questions">;
