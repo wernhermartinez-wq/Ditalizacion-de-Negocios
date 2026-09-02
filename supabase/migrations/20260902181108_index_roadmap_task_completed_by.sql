@@ -1,0 +1,2 @@
+create index roadmap_task_completions_completed_by_idx
+on public.roadmap_task_completions (completed_by);

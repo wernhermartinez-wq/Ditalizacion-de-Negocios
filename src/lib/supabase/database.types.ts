@@ -256,6 +256,39 @@ export type Database = {
         }
         Relationships: []
       }
+      roadmap_task_completions: {
+        Row: {
+          completed_at: string
+          completed_by: string
+          diagnostic_id: string
+          id: string
+          organization_id: string
+          task_key: string
+          title: string
+        }
+        Insert: {
+          completed_at?: string
+          completed_by: string
+          diagnostic_id: string
+          id?: string
+          organization_id: string
+          task_key: string
+          title: string
+        }
+        Update: {
+          completed_at?: string
+          completed_by?: string
+          diagnostic_id?: string
+          id?: string
+          organization_id?: string
+          task_key?: string
+          title?: string
+        }
+        Relationships: [
+          { foreignKeyName: "roadmap_task_completions_diagnostic_id_fkey"; columns: ["diagnostic_id"]; isOneToOne: false; referencedRelation: "diagnostics"; referencedColumns: ["id"] },
+          { foreignKeyName: "roadmap_task_completions_organization_id_fkey"; columns: ["organization_id"]; isOneToOne: false; referencedRelation: "organizations"; referencedColumns: ["id"] },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

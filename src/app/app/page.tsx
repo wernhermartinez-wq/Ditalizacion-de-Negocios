@@ -35,13 +35,17 @@ export default async function DashboardPage() {
       .maybeSingle(),
   ]);
   const diagnosticRow = diagnosticResult.data;
-  const responsesResult = diagnosticRow
-    ? await supabase.from("diagnostic_responses").select("*").eq("diagnostic_id", diagnosticRow.id)
-    : { data: [], error: null };
+  const [responsesResult, completionsResult] = diagnosticRow
+    ? await Promise.all([
+        supabase.from("diagnostic_responses").select("*").eq("diagnostic_id", diagnosticRow.id),
+        supabase.from("roadmap_task_completions").select("task_key").eq("diagnostic_id", diagnosticRow.id),
+      ])
+    : [{ data: [], error: null }, { data: [], error: null }];
   const questions = questionsResult.data ?? [];
   const responses = responsesResult.data ?? [];
+  const completedTaskKeys = new Set((completionsResult.data ?? []).map((completion) => completion.task_key));
   const tasks = diagnosticRow?.status === "completed"
-    ? roadmapTasks(buildRoadmap(questions, responses)).slice(0, 3)
+    ? roadmapTasks(buildRoadmap(questions, responses)).filter((task) => !completedTaskKeys.has(task.id)).slice(0, 3)
     : [];
 
   return (

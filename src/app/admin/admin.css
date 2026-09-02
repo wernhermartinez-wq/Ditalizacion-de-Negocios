@@ -126,12 +126,23 @@
 .admin-work-timeline h3 { margin: 0.25rem 0 0; font-size: 0.82rem; }
 .admin-work-timeline p { margin: 0.35rem 0 0; color: var(--ink-600); font-size: 0.7rem; line-height: 1.5; }
 .admin-pending-tasks { padding: 0.3rem 1.2rem 1rem; }
-.admin-pending-tasks article { padding: 0.8rem 0; display: grid; grid-template-columns: auto 1fr; gap: 0.65rem; border-top: 1px solid #edf1f0; }
+.admin-pending-tasks article { padding: 0.8rem 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.65rem; align-items: center; border-top: 1px solid #edf1f0; }
 .admin-pending-tasks article:first-child { border-top: 0; }
 .admin-pending-tasks i { width: 0.5rem; height: 0.5rem; margin-top: 0.22rem; border-radius: 50%; background: var(--task-color); }
 .admin-pending-tasks strong, .admin-pending-tasks small { display: block; }
 .admin-pending-tasks strong { font-size: 0.72rem; }
 .admin-pending-tasks small { margin-top: 0.2rem; color: var(--ink-600); font-size: 0.59rem; }
+.admin-pending-tasks button, .admin-completed-tasks button { padding: 0.45rem 0.55rem; display: inline-flex; gap: 0.35rem; align-items: center; border: 1px solid var(--line); border-radius: 0.45rem; color: var(--accent-strong); background: #fff8ef; font-size: 0.59rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.admin-pending-tasks button:hover { border-color: var(--accent); background: #fce9dc; }
+.admin-completed-tasks { padding: 0.3rem 1.2rem 1rem; }
+.admin-completed-tasks article { padding: 0.8rem 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.65rem; align-items: center; border-top: 1px solid #edf1f0; }
+.admin-completed-tasks article:first-child { border-top: 0; }
+.admin-completed-tasks article > svg { color: #55714e; }
+.admin-completed-tasks strong, .admin-completed-tasks small { display: block; }
+.admin-completed-tasks strong { font-size: 0.72rem; }
+.admin-completed-tasks small { margin-top: 0.2rem; color: var(--ink-600); font-size: 0.59rem; }
+.admin-completed-tasks button { color: var(--ink-600); background: transparent; }
+.admin-completed-tasks button:hover { color: var(--accent-strong); background: #f7eee3; }
 .admin-member-list { padding: 0.3rem 1rem 1rem; }
 .admin-member-list article { padding: 0.85rem 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.6rem; align-items: center; border-top: 1px solid #edf1f0; }
 .admin-member-list article:first-child { border-top: 0; }
@@ -176,6 +187,8 @@
   .admin-registration-list article { grid-template-columns: auto minmax(0, 1fr); }
   .admin-registration-list article > span:nth-child(n+3) { display: none; }
   .admin-company-hero { grid-template-columns: auto minmax(0, 1fr); }
+  .admin-pending-tasks article, .admin-completed-tasks article { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+  .admin-pending-tasks form, .admin-completed-tasks form { grid-column: 2; }
   .admin-diagnostic-state { grid-column: 1 / -1; text-align: left; }
   .admin-work-form { grid-template-columns: 1fr; }
   .admin-work-form .field-wide, .admin-work-form-footer { grid-column: auto; }
@@ -207,7 +220,7 @@
 .admin-company-form input, .admin-work-form input, .admin-work-form select, .admin-work-form textarea { background: #fffaf3; }
 .admin-company-form input:focus, .admin-work-form input:focus, .admin-work-form select:focus, .admin-work-form textarea:focus { outline-color: rgb(211 90 61 / 0.14); }
 .admin-kpis article > svg, .admin-company-facts svg, .admin-member-list > article > svg { color: var(--accent); }
-.admin-section-title, .admin-company-row, .admin-user-list > div, .admin-registration-list article, .admin-work-timeline article, .admin-pending-tasks article, .admin-member-list article { border-color: #eee3d3; }
+.admin-section-title, .admin-company-row, .admin-user-list > div, .admin-registration-list article, .admin-work-timeline article, .admin-pending-tasks article, .admin-completed-tasks article, .admin-member-list article { border-color: #eee3d3; }
 .admin-company-row:hover { background: #fcf5eb; }
 .admin-company-mark { color: #873b2c; background: #f8d9c3; }
 .admin-user-state, .status-complete { color: var(--success); }

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isPlatformAdmin } from "@/lib/admin";
+import { buildRoadmap, roadmapTasks } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
 import { workCategories } from "@/lib/work";
 
@@ -52,4 +53,79 @@ export async function addWorkEntry(organizationId: string, formData: FormData) {
   revalidatePath(`/admin/empresas/${organizationId}`);
   revalidatePath("/app/trabajo-nexaro");
   message(organizationId, "success", "Trabajo realizado registrado correctamente.");
+}
+
+export async function completeRoadmapTask(organizationId: string, diagnosticId: string, taskKey: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(organizationId) || !/^[0-9a-f-]{36}$/i.test(diagnosticId) || !/^[A-Z]{3}-[1-3]$/.test(taskKey)) redirect("/admin");
+  const supabase = await createClient();
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const userId = typeof claimsData?.claims?.sub === "string" ? claimsData.claims.sub : null;
+  if (claimsError || !userId) redirect("/login");
+  if (!(await isPlatformAdmin(supabase, userId))) redirect("/app");
+
+  const { data: diagnostic, error: diagnosticError } = await supabase
+    .from("diagnostics")
+    .select("id, questionnaire_id")
+    .eq("id", diagnosticId)
+    .eq("organization_id", organizationId)
+    .eq("status", "completed")
+    .maybeSingle();
+  if (diagnosticError || !diagnostic) message(organizationId, "error", "No se pudo validar la tarea.");
+
+  const [questionsResult, responsesResult] = await Promise.all([
+    supabase.from("diagnostic_questions").select("*").eq("questionnaire_id", diagnostic.questionnaire_id).order("position"),
+    supabase.from("diagnostic_responses").select("*").eq("diagnostic_id", diagnostic.id),
+  ]);
+  if (questionsResult.error || responsesResult.error) message(organizationId, "error", "No se pudo comprobar la hoja de ruta.");
+
+  const task = roadmapTasks(buildRoadmap(questionsResult.data ?? [], responsesResult.data ?? []))
+    .find((candidate) => candidate.id === taskKey);
+  if (!task) message(organizationId, "error", "Esta tarea no pertenece a la hoja de ruta actual.");
+
+  const { error } = await supabase.from("roadmap_task_completions").insert({
+    organization_id: organizationId,
+    diagnostic_id: diagnostic.id,
+    task_key: task.id,
+    title: task.title,
+    completed_by: userId,
+  });
+  if (error && error.code !== "23505") message(organizationId, "error", "No se pudo marcar la tarea como realizada.");
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/empresas/${organizationId}`);
+  revalidatePath("/app");
+  revalidatePath("/app/tareas");
+  message(organizationId, "success", "Tarea completada y visible en el historial del cliente.");
+}
+
+export async function reopenRoadmapTask(organizationId: string, diagnosticId: string, taskKey: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(organizationId) || !/^[0-9a-f-]{36}$/i.test(diagnosticId) || !/^[A-Z]{3}-[1-3]$/.test(taskKey)) redirect("/admin");
+  const supabase = await createClient();
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const userId = typeof claimsData?.claims?.sub === "string" ? claimsData.claims.sub : null;
+  if (claimsError || !userId) redirect("/login");
+  if (!(await isPlatformAdmin(supabase, userId))) redirect("/app");
+
+  const { data: diagnostic, error: diagnosticError } = await supabase
+    .from("diagnostics")
+    .select("id")
+    .eq("id", diagnosticId)
+    .eq("organization_id", organizationId)
+    .eq("status", "completed")
+    .maybeSingle();
+  if (diagnosticError || !diagnostic) message(organizationId, "error", "No se pudo validar la tarea.");
+
+  const { error } = await supabase
+    .from("roadmap_task_completions")
+    .delete()
+    .eq("organization_id", organizationId)
+    .eq("diagnostic_id", diagnostic.id)
+    .eq("task_key", taskKey);
+  if (error) message(organizationId, "error", "No se pudo devolver la tarea a pendientes.");
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/empresas/${organizationId}`);
+  revalidatePath("/app");
+  revalidatePath("/app/tareas");
+  message(organizationId, "success", "Tarea devuelta a pendientes.");
 }
