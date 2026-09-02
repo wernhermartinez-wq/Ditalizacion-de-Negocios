@@ -1,21 +1,21 @@
 import type { Tables } from "@/lib/supabase/database.types";
 
 export const diagnosticDimensions = [
-  { key: "digital_presence", code: "VIS", name: "Presencia y descubrimiento", color: "#4ba8a6" },
-  { key: "acquisition", code: "CAP", name: "Captación digital", color: "#65b995" },
-  { key: "sales_funnel", code: "VEN", name: "Embudo y ventas", color: "#d5aa4d" },
-  { key: "customer_experience", code: "CLI", name: "Experiencia y fidelización", color: "#c98262" },
-  { key: "data_automation", code: "DAT", name: "Datos y automatización", color: "#708fbd" },
-  { key: "strategy_enablement", code: "EST", name: "Estrategia y capacidades", color: "#8b79bb" },
+  { key: "digital_presence", code: "VIS", name: "Presencia y descubrimiento", color: "#d35a3d" },
+  { key: "acquisition", code: "CAP", name: "Captación digital", color: "#f39a5a" },
+  { key: "sales_funnel", code: "VEN", name: "Embudo y ventas", color: "#d69a50" },
+  { key: "customer_experience", code: "CLI", name: "Experiencia y fidelización", color: "#ba7259" },
+  { key: "data_automation", code: "DAT", name: "Datos y automatización", color: "#8f7965" },
+  { key: "strategy_enablement", code: "EST", name: "Estrategia y capacidades", color: "#6f7a57" },
 ] as const;
 
 const legacyDiagnosticDimensions = [
-  { key: "digital_strategy", code: "EST", name: "Estrategia digital", color: "#4ba8a6" },
-  { key: "digital_readiness", code: "PRE", name: "Preparación digital", color: "#65b995" },
-  { key: "digital_skills", code: "PER", name: "Personas y adopción digital", color: "#d5aa4d" },
-  { key: "data_management", code: "DAT", name: "Gestión de datos", color: "#5f9fbd" },
-  { key: "automation_intelligence", code: "AUT", name: "Automatización e inteligencia", color: "#8b79bb" },
-  { key: "green_digitalisation", code: "SOS", name: "Digitalización sostenible", color: "#bd7e63" },
+  { key: "digital_strategy", code: "EST", name: "Estrategia digital", color: "#d35a3d" },
+  { key: "digital_readiness", code: "PRE", name: "Preparación digital", color: "#f39a5a" },
+  { key: "digital_skills", code: "PER", name: "Personas y adopción digital", color: "#d69a50" },
+  { key: "data_management", code: "DAT", name: "Gestión de datos", color: "#8f7965" },
+  { key: "automation_intelligence", code: "AUT", name: "Automatización e inteligencia", color: "#ba7259" },
+  { key: "green_digitalisation", code: "SOS", name: "Digitalización sostenible", color: "#6f7a57" },
 ] as const;
 
 export const maturityScale = [

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const colors = ["#6dc6c0", "#94d0bd", "#e8c879", "#7eb7ce", "#af9fd1", "#df9d7d"];
+const colors = ["#f4ebdd", "#cdbd9f", "#f0b36f", "#f39a5a", "#df7450", "#d35a3d"];
 
 export function AuthShell({
   title,

@@ -394,3 +394,63 @@
   .client-work-log > header, .client-work-meta { align-items: flex-start; flex-direction: column; }
   .client-work-timeline { padding: 1rem; }
 }
+
+/* Nexaro 2026 brand palette */
+.sidebar { color: var(--ivory); background: var(--ink-950); }
+.sidebar-brand .brand { color: var(--accent-warm); }
+.org-switcher { border-color: rgb(243 154 90 / 0.2); background: rgb(255 253 248 / 0.055); }
+.org-mark { color: var(--ink-950); background: var(--accent-warm); }
+.org-switcher small, .user-summary small { color: #b9aa94; }
+.main-nav a, .signout { color: #c6b9a6; }
+.main-nav a.active { color: var(--ivory); background: rgb(211 90 61 / 0.18); }
+.main-nav a.active::before { background: var(--accent-warm); }
+.admin-entry-link { color: #f4c49f; border-color: rgb(243 154 90 / 0.24); background: rgb(211 90 61 / 0.1); }
+.admin-entry-link:hover { background: rgb(211 90 61 / 0.18); }
+.avatar { color: var(--ivory); background: #4b3b30; }
+.topbar { background: rgb(246 240 231 / 0.9); }
+.eyebrow, .card-head a, .workspace-confirmation a, .honest-empty-card a, .work-page-heading > div > p, .client-work-log > header p { color: var(--accent-strong); }
+.page-heading h1 { color: var(--ink-950); background: linear-gradient(110deg, var(--ink-950) 45%, var(--accent) 125%); background-clip: text; -webkit-text-fill-color: transparent; }
+.level-card::after { border-color: rgb(243 154 90 / 0.28); box-shadow: 0 0 0 2.8rem rgb(243 154 90 / 0.045); }
+.level-card .card-label, .diagnostic-overall-card .card-label { color: #e1c9aa; }
+.score-line > span, .level-meta small, .empty-score span, .real-level-copy p, .diagnostic-score span, .diagnostic-overall-card p { color: var(--sand); }
+.light-action, .diagnostic-overall-action { color: #f4c49f; }
+.dimension-code { background: color-mix(in srgb, var(--dimension-color) 16%, var(--surface)); }
+.bar-track, .project-progress, .diagnostic-progress-track { background: #eadfce; }
+.progress-ring { background: conic-gradient(var(--accent) calc(var(--progress) * 1%), #eadfce 0); }
+.progress-ring::after { background: var(--surface); }
+.activity-avatar, .honest-empty-icon, .state-visual { color: var(--accent-strong); }
+.tool-item, .diagnostic-scale-key > div, .diagnostic-scale label > span { border-color: var(--line); background: #fffaf3; }
+.card, .state-card, .secondary-action, .company-form .field input { background: var(--surface); }
+.next-step-card, .task-phase > header, .client-work-log > header { background: #faf4ea; }
+.next-step-marker { background: var(--surface); }
+.state-banner { background: color-mix(in srgb, var(--state-color) 8%, var(--surface)); }
+.skeleton { background: linear-gradient(90deg, #e9dece 25%, #f7f0e7 37%, #e9dece 63%); background-size: 400% 100%; }
+.workspace-confirmation, .onboarding-note, .roadmap-task-preview-head > span, .conditional-question-note, .roadmap-item-meta b, .client-work-meta > span { border-color: #ead0bc; color: #8e3f2e; background: #fce9dc; }
+.workspace-confirmation-icon { color: var(--accent-strong); background: var(--surface); }
+.pending-chip, .generated-task-order { background: #eee4d6; }
+.empty-dimension-row .dimension-code { --dimension-color: #9d8b75; }
+.empty-dimension-row .bar-track { background: repeating-linear-gradient(90deg, #e8ddcd 0 0.45rem, transparent 0.45rem 0.72rem); }
+.real-data-badge, .work-total { border-color: #cbd6c3; background: #eff3eb; }
+.diagnostic-scope-note { border-color: var(--line); color: var(--ink-800); background: #f2e9dc; }
+.diagnostic-question, .dashboard-roadmap-tasks > div, .task-row, .activity-row, .generated-task { border-color: #eee3d3; }
+.diagnostic-section legend { background: color-mix(in srgb, var(--dimension-color) 7%, var(--surface)); }
+.diagnostic-question-heading > span { background: color-mix(in srgb, var(--dimension-color) 18%, var(--surface)); }
+.diagnostic-question-heading small { color: var(--ink-600); }
+.diagnostic-scale-key b { color: var(--accent-strong); background: var(--accent-soft); }
+.diagnostic-scale input:focus-visible + span { outline-color: rgb(211 90 61 / 0.32); }
+.diagnostic-footer { box-shadow: 0 8px 32px rgb(31 26 22 / 0.16); }
+.diagnostic-roadmap-cta { border-color: var(--accent); background: var(--accent); }
+.diagnostic-roadmap-cta small { color: #f9d9c2; }
+.roadmap-summary > p { color: #e6d9c5; }
+.roadmap-summary small, .roadmap-summary strong span { color: var(--sand); }
+.roadmap-summary > p svg { color: var(--accent-warm); }
+.roadmap-phase:not(:last-child)::before, .client-work-timeline > article:not(:last-child)::before { background: #d8c8b2; }
+.roadmap-phase > header > span { border-color: #e5a878; background: var(--accent); }
+.roadmap-phase > header p, .roadmap-item summary, .task-phase > header span, .generated-task small b { color: var(--accent-strong); }
+.roadmap-success { color: #526749; background: #eff3eb; }
+.task-phase > header, .client-work-log > header { background: #faf4ea; }
+.generated-task > svg { color: #9a8974; }
+.nexaro-work-empty > svg { color: var(--accent); }
+.client-work-marker { border-color: #d3c2aa; color: #5c714f; background: #f0f3eb; }
+.client-work-card, .client-work-log { border-color: var(--line); background: var(--surface); }
+.nav-scrim { background: rgb(31 26 22 / 0.62); }
