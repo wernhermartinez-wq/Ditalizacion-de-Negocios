@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { logout } from "@/app/app/actions";
+import { BrandLogo } from "@/components/brand-logo";
 
 const navItems = [
   { href: "/app", label: "Inicio", icon: LayoutDashboard },
@@ -47,7 +48,7 @@ export function AppShell({ children, email, fullName, organizationName, isAdmin 
     <div className="app-frame">
       <button className={`nav-scrim ${open ? "show" : ""}`} onClick={() => setOpen(false)} aria-label="Cerrar navegación" tabIndex={open ? 0 : -1} />
       <aside className={`sidebar ${open ? "open" : ""}`}>
-        <div className="sidebar-brand"><Link href="/app" className="brand">NEXARO</Link><button className="icon-button close-nav" onClick={() => setOpen(false)} aria-label="Cerrar menú"><X size={20} /></button></div>
+        <div className="sidebar-brand"><Link href="/app" className="brand-logo-link" aria-label="Nexaro, inicio"><BrandLogo className="sidebar-brand-logo" /></Link><button className="icon-button close-nav" onClick={() => setOpen(false)} aria-label="Cerrar menú"><X size={20} /></button></div>
         <Link className="org-switcher" href="/app/perfil" onClick={() => setOpen(false)}><span className="org-mark">{initials(company)}</span><span><strong>{company}</strong><small>{organizationName ? "Empresa activa" : "Completa los datos reales"}</small></span><ChevronDown size={16} /></Link>
         <nav className="main-nav" aria-label="Navegación principal">
           {navItems.map(({ href, label, icon: Icon }) => {

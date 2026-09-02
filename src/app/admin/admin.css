@@ -1,6 +1,7 @@
 .admin-frame { min-height: 100dvh; display: grid; grid-template-columns: 15.5rem minmax(0, 1fr); background: #eef3f1; }
 .admin-sidebar { position: sticky; top: 0; height: 100dvh; padding: 1.5rem 1rem; display: flex; flex-direction: column; color: #e9f4f2; background: #0c222b; }
-.admin-brand { padding: 0.4rem 0.65rem 1.6rem; display: flex; gap: 0.6rem; align-items: baseline; border-bottom: 1px solid rgb(255 255 255 / 0.09); }
+.admin-brand { padding: 0.25rem 0.65rem 1.35rem; display: flex; gap: 0.65rem; align-items: center; border-bottom: 1px solid rgb(255 255 255 / 0.09); }
+.admin-brand-logo { width: 3.9rem; }
 .admin-brand span { font: 700 0.78rem var(--font-data); letter-spacing: 0.2em; }
 .admin-brand small { color: #72c9bf; font: 700 0.55rem var(--font-data); letter-spacing: 0.13em; }
 .admin-authority { margin: 1rem 0 1.4rem; padding: 0.8rem; display: flex; gap: 0.65rem; align-items: center; border: 1px solid rgb(114 201 191 / 0.2); border-radius: 0.7rem; background: rgb(114 201 191 / 0.08); }

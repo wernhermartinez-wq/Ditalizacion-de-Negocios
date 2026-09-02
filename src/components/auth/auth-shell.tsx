@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 
 const colors = ["#f4ebdd", "#cdbd9f", "#f0b36f", "#f39a5a", "#df7450", "#d35a3d"];
 
@@ -16,7 +17,7 @@ export function AuthShell({
   return (
     <main className="auth-shell">
       <section className="auth-story" aria-label="Nexaro">
-        <Link href="/login" className="brand">NEXARO</Link>
+        <Link href="/login" className="brand-logo-link" aria-label="Nexaro, acceso"><BrandLogo className="auth-brand-logo" /></Link>
         <div className="story-copy">
           <h1>Convierte tu avance digital en decisiones claras.</h1>
           <p>Diagnóstico, prioridades y trabajo realizado en un mismo espacio para que tu empresa sepa dónde está y cuál es el siguiente paso.</p>

@@ -1,6 +1,7 @@
 .app-frame { min-height: 100dvh; display: grid; grid-template-columns: 17rem minmax(0, 1fr); }
 .sidebar { position: sticky; top: 0; z-index: 30; height: 100dvh; display: flex; flex-direction: column; padding: 1.4rem 1rem 1rem; color: #eaf4f3; background: var(--ink-950); }
-.sidebar-brand { min-height: 2.6rem; display: flex; align-items: center; justify-content: space-between; padding: 0 0.7rem; }
+.sidebar-brand { min-height: 3.5rem; display: flex; align-items: center; justify-content: space-between; padding: 0 0.7rem; }
+.sidebar-brand-logo { width: 4.2rem; }
 .sidebar-brand .brand { color: #bce0dc; }
 .close-nav { display: none !important; color: white; }
 .org-switcher { width: 100%; margin: 1.1rem 0 1.4rem; padding: 0.75rem; display: grid; grid-template-columns: auto 1fr auto; gap: 0.7rem; align-items: center; text-align: left; border: 1px solid rgb(220 241 239 / 0.12); border-radius: var(--radius-md); color: inherit; background: rgb(255 255 255 / 0.055); cursor: pointer; }
