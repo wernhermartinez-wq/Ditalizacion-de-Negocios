@@ -48,6 +48,13 @@ type DashboardTask = {
 export function Dashboard({ organizationName, diagnostic, tasks }: { organizationName: string; diagnostic: DashboardDiagnostic | null; tasks: DashboardTask[] }) {
   const completed = diagnostic?.status === "completed";
   const started = Boolean(diagnostic?.answered);
+  const nextStepCard = (
+    <section className={`card next-step-card ${completed ? "" : "next-step-primary"}`}>
+      <div className="next-step-marker"><ClipboardCheck size={24} /></div>
+      <div><p className="eyebrow">{completed ? "Plan disponible" : "Primer paso"}</p><h2>{completed ? "Pasa del resultado al plan de 90 días" : started ? "Continúa el diagnóstico de tu negocio" : "Inicia el diagnóstico de tu negocio"}</h2><p>{completed ? "La hoja de ruta prioriza seis frentes de trabajo desde las respuestas reales de tu empresa." : "Responde pensando en cómo trabajas hoy. Puedes guardar el borrador y continuar cuando quieras."}</p></div>
+      <Link className="secondary-action" href={completed ? "/app/hoja-de-ruta" : "/app/diagnostico"}>{completed ? "Abrir hoja de ruta" : started ? "Continuar" : "Comenzar"} <ArrowRight size={16} /></Link>
+    </section>
+  );
   return (
     <main className="page-content real-dashboard">
       <div className="page-heading real-dashboard-heading">
@@ -66,6 +73,8 @@ export function Dashboard({ organizationName, diagnostic, tasks }: { organizatio
       </section>
 
       <div className="dashboard-grid">
+        {!completed && nextStepCard}
+
         <section className="card level-card real-level-card" aria-labelledby="real-level-title">
           <span id="real-level-title" className="card-label">Nivel general</span>
           <div className="empty-score">{completed ? Math.round(diagnostic.score ?? 0) : "—"}<span>/ 100</span></div>
@@ -113,11 +122,7 @@ export function Dashboard({ organizationName, diagnostic, tasks }: { organizatio
           </section>
         ))}
 
-        <section className="card next-step-card">
-          <div className="next-step-marker"><ClipboardCheck size={24} /></div>
-          <div><p className="eyebrow">{completed ? "Plan disponible" : "Siguiente paso"}</p><h2>{completed ? "Pasa del resultado al plan de 90 días" : started ? "Continúa el diagnóstico de madurez digital" : "Inicia el diagnóstico de madurez digital"}</h2><p>{completed ? "La hoja de ruta prioriza seis frentes de trabajo desde las respuestas reales de tu empresa." : `Responde las preguntas aplicables, guarda el borrador cuando quieras y finaliza para obtener el resultado provisional.`}</p></div>
-          <Link className="secondary-action" href={completed ? "/app/hoja-de-ruta" : "/app/diagnostico"}>{completed ? "Abrir hoja de ruta" : started ? "Continuar" : "Comenzar"} <ArrowRight size={16} /></Link>
-        </section>
+        {completed && nextStepCard}
       </div>
     </main>
   );
