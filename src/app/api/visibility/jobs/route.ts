@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { executeVisibilityRun } from "@/lib/visibility/runner";
 import { visibilityProviders, type VisibilityProviderName } from "@/lib/visibility/types";
@@ -5,10 +6,18 @@ import { visibilityProviders, type VisibilityProviderName } from "@/lib/visibili
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
+function isAuthorized(expected: string | undefined, supplied: string | undefined) {
+  if (!expected || !supplied) return false;
+  const expectedBuffer = Buffer.from(expected);
+  const suppliedBuffer = Buffer.from(supplied);
+  if (expectedBuffer.length !== suppliedBuffer.length) return false;
+  return timingSafeEqual(expectedBuffer, suppliedBuffer);
+}
+
 export async function POST(request: Request) {
   const expected = process.env.VISIBILITY_JOB_SECRET;
   const supplied = request.headers.get("x-visibility-secret") ?? request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (!expected || supplied !== expected) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  if (!isAuthorized(expected, supplied)) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   try {
     const body = await request.json() as { projectId?: string; idempotencyKey?: string; providers?: string[] };
     if (!body.projectId || !/^[0-9a-f-]{36}$/i.test(body.projectId)) return NextResponse.json({ error: "projectId no válido." }, { status: 400 });
