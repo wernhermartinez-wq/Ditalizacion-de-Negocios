@@ -124,6 +124,176 @@ export type Database = {
         }
         Relationships: []
       }
+      course_assignments: {
+        Row: {
+          assessment_id: string | null
+          assigned_by: string
+          course_id: string
+          created_at: string
+          due_date: string | null
+          id: string
+          organization_id: string
+          reason: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assessment_id?: string | null
+          assigned_by: string
+          course_id: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          organization_id: string
+          reason: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assessment_id?: string | null
+          assigned_by?: string
+          course_id?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          organization_id?: string
+          reason?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_assignments_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_assignments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_assignments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_competencies: {
+        Row: {
+          competency: string
+          course_id: string
+          created_at: string
+          dimension_id: string
+        }
+        Insert: {
+          competency: string
+          course_id: string
+          created_at?: string
+          dimension_id: string
+        }
+        Update: {
+          competency?: string
+          course_id?: string
+          created_at?: string
+          dimension_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_competencies_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_progress: {
+        Row: {
+          assignment_id: string
+          completed_at: string | null
+          evaluation: string | null
+          evidence: string | null
+          percentage: number
+          updated_at: string
+        }
+        Insert: {
+          assignment_id: string
+          completed_at?: string | null
+          evaluation?: string | null
+          evidence?: string | null
+          percentage?: number
+          updated_at?: string
+        }
+        Update: {
+          assignment_id?: string
+          completed_at?: string | null
+          evaluation?: string | null
+          evidence?: string | null
+          percentage?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_progress_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: true
+            referencedRelation: "course_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          created_at: string
+          duration_minutes: number
+          id: string
+          level: string
+          modality: string
+          provider: string
+          slug: string
+          status: string
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          level: string
+          modality: string
+          provider?: string
+          slug: string
+          status?: string
+          summary: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          level?: string
+          modality?: string
+          provider?: string
+          slug?: string
+          status?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       company_registrations: {
         Row: {
           company_name: string
@@ -774,6 +944,172 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tool_catalog: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          provider: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          provider?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          provider?: string | null
+        }
+        Relationships: []
+      }
+      tool_integrations: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          last_verified_at: string | null
+          method: string
+          organization_id: string
+          source_tool_id: string
+          status: string
+          target_tool_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          last_verified_at?: string | null
+          method: string
+          organization_id: string
+          source_tool_id: string
+          status?: string
+          target_tool_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          last_verified_at?: string | null
+          method?: string
+          organization_id?: string
+          source_tool_id?: string
+          status?: string
+          target_tool_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_integrations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_integrations_source_tool_id_organization_id_fkey"
+            columns: ["source_tool_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_tools"
+            referencedColumns: ["id", "organization_id"]
+          },
+          {
+            foreignKeyName: "tool_integrations_target_tool_id_organization_id_fkey"
+            columns: ["target_tool_id", "organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_tools"
+            referencedColumns: ["id", "organization_id"]
+          },
+        ]
+      }
+      organization_tools: {
+        Row: {
+          business_area: string
+          category: string
+          created_at: string
+          created_by: string
+          criticality: string
+          currency: string
+          custom_name: string | null
+          custom_provider: string | null
+          id: string
+          monthly_cost: number
+          organization_id: string
+          owner_name: string | null
+          status: string
+          tool_id: string | null
+          updated_at: string
+          usage_purpose: string
+          user_count: number | null
+          verified_at: string | null
+        }
+        Insert: {
+          business_area: string
+          category: string
+          created_at?: string
+          created_by: string
+          criticality?: string
+          currency?: string
+          custom_name?: string | null
+          custom_provider?: string | null
+          id?: string
+          monthly_cost?: number
+          organization_id: string
+          owner_name?: string | null
+          status?: string
+          tool_id?: string | null
+          updated_at?: string
+          usage_purpose: string
+          user_count?: number | null
+          verified_at?: string | null
+        }
+        Update: {
+          business_area?: string
+          category?: string
+          created_at?: string
+          created_by?: string
+          criticality?: string
+          currency?: string
+          custom_name?: string | null
+          custom_provider?: string | null
+          id?: string
+          monthly_cost?: number
+          organization_id?: string
+          owner_name?: string | null
+          status?: string
+          tool_id?: string | null
+          updated_at?: string
+          usage_purpose?: string
+          user_count?: number | null
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_tools_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_tools_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tool_catalog"
             referencedColumns: ["id"]
           },
         ]
@@ -1446,6 +1782,15 @@ export type Database = {
           p_email: string
         }
         Returns: string
+      }
+      update_course_progress: {
+        Args: {
+          p_assignment_id: string
+          p_evaluation?: string
+          p_evidence?: string
+          p_percentage: number
+        }
+        Returns: undefined
       }
       validate_diagnostic_snapshot: {
         Args: {

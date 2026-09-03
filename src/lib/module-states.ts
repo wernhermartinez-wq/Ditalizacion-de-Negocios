@@ -14,13 +14,13 @@ export const moduleStates = {
   evolucion: {
     title: "Evolución",
     description: "Compara resultados validados a lo largo del tiempo.",
-    status: "locked" as const,
-    action: "Ver diagnóstico actual",
+    status: "ready" as const,
+    action: "Consultar evolución",
   },
   herramientas: {
     title: "Herramientas",
     description: "Inventario de aplicaciones y conexiones de la empresa.",
-    status: "empty" as const,
+    status: "ready" as const,
     action: "Crear inventario",
   },
   "hoja-de-ruta": {
@@ -38,7 +38,7 @@ export const moduleStates = {
   cursos: {
     title: "Cursos",
     description: "Formación recomendada según las brechas detectadas.",
-    status: "locked" as const,
+    status: "ready" as const,
     action: "Explorar formación",
   },
   "trabajo-nexaro": {
