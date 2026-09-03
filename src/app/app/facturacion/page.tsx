@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { AuthMessage } from "@/components/auth/message";
 import { getCurrentOrganization } from "@/lib/organizations";
 import { createClient } from "@/lib/supabase/server";
+import { getStripeEnvironment } from "@/lib/stripe/server";
 import { openStripeCustomerPortal, startStripeCheckout } from "./actions";
 
 export const metadata: Metadata = { title: "Facturación" };
@@ -25,6 +26,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
   if (!userId) redirect("/login");
 
   const organization = await getCurrentOrganization(supabase, userId);
+  const isProduction = getStripeEnvironment() === "production";
   const [{ data: subscription }, params] = await Promise.all([
     organization
       ? supabase.from("stripe_subscriptions").select("*").eq("organization_id", organization.id).maybeSingle()
@@ -38,7 +40,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
         <div>
           <p className="eyebrow">Plan Nexaro</p>
           <h1>Facturación clara, siempre el día 15</h1>
-          <p className="page-description">Activa el acceso mediante el Checkout seguro de Stripe. Esta integración permanece en modo de prueba.</p>
+          <p className="page-description">Activa el acceso mediante el Checkout seguro de Stripe. Entorno actual: {isProduction ? "producción" : "prueba"}.</p>
         </div>
         <span className="real-data-badge"><ShieldCheck size={16} /> Managed Payments</span>
       </div>
@@ -55,7 +57,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
             <li><Check size={16} /> Si te das de alta el día 15, el cobro es inmediato</li>
           </ul>
           {!subscription?.access_enabled ? (
-            <form action={startStripeCheckout}><button className="button-primary" type="submit"><CreditCard size={17} /> Continuar a Checkout de prueba</button></form>
+            <form action={startStripeCheckout}><button className="button-primary" type="submit"><CreditCard size={17} /> Continuar a Checkout</button></form>
           ) : (
             <div className="billing-active"><Check size={17} /> Suscripción activa</div>
           )}

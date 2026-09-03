@@ -4,9 +4,9 @@ La integración usa Checkout Sessions alojado por Stripe en modo `subscription`.
 
 ## Estado de despliegue
 
-La aplicación está bloqueada deliberadamente en **modo test**. `src/lib/stripe/server.ts` rechaza claves live, rechaza el Price ID productivo y rechaza cualquier valor de `STRIPE_ENVIRONMENT` distinto de `test`.
+La aplicación usa **modo test** por defecto. La producción solo se habilita si coinciden cuatro controles: `STRIPE_ENVIRONMENT=production`, una clave `sk_live_` o `rk_live_`, el Price ID productivo exacto y `STRIPE_PRODUCTION_ENABLED=true`.
 
-El Price ID previsto para producción es `price_1UBVm4IqsrQ2sW9YgMZpvgp3` (95 EUR/mes), pero no está conectado al flujo ejecutable. En la cuenta test de Nexaro se creó el precio recurrente mensual de 95 EUR `price_1UBeUOIEkcjBfEPvjPJu5pg5`, que debe configurarse como `STRIPE_TEST_PRICE_ID`.
+El Price ID previsto para producción es `price_1UBVm4IqsrQ2sW9YgMZpvgp3` (95 EUR/mes) y el servidor exige esa coincidencia exacta antes de aceptar una clave live. En la cuenta test de Nexaro se creó el precio recurrente mensual de 95 EUR `price_1UBeUOIEkcjBfEPvjPJu5pg5`, que debe configurarse como `STRIPE_TEST_PRICE_ID`.
 
 ## Variables de servidor
 
@@ -14,8 +14,10 @@ El Price ID previsto para producción es `price_1UBVm4IqsrQ2sW9YgMZpvgp3` (95 EU
 STRIPE_ENVIRONMENT=test
 STRIPE_API_KEY=rk_test_...
 STRIPE_TEST_PRICE_ID=price_1UBeUOIEkcjBfEPvjPJu5pg5
+STRIPE_PRODUCTION_PRICE_ID=price_1UBVm4IqsrQ2sW9YgMZpvgp3
 STRIPE_WEBHOOK_SECRET=whsec_...
 APP_URL=http://localhost:3000
+STRIPE_PRODUCTION_ENABLED=false
 STRIPE_BILLING_ENFORCEMENT_ENABLED=false
 ```
 
@@ -70,4 +72,18 @@ Copiar el `whsec_...` que devuelve el comando. Crear además una configuración 
 9. Revisar en Stripe el cálculo fiscal y los métodos habilitados por Managed Payments.
 10. Ejecutar lint, typecheck, tests y build.
 
-El desbloqueo de producción requiere un cambio de código intencionado además de variables live. No debe realizarse hasta completar esta lista.
+## Configuración productiva
+
+Una vez completada la lista, configurar en el entorno Production de Vercel:
+
+```dotenv
+STRIPE_ENVIRONMENT=production
+STRIPE_API_KEY=rk_live_...
+STRIPE_PRODUCTION_PRICE_ID=price_1UBVm4IqsrQ2sW9YgMZpvgp3
+STRIPE_WEBHOOK_SECRET=whsec_... # secreto del endpoint live
+APP_URL=https://empresas.nexaro-ia.com
+STRIPE_PRODUCTION_ENABLED=true
+STRIPE_BILLING_ENFORCEMENT_ENABLED=true
+```
+
+El endpoint live debe apuntar a `https://empresas.nexaro-ia.com/api/stripe/webhooks`. Nunca se deben reutilizar la clave ni el secreto del webhook de test.

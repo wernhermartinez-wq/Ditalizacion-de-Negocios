@@ -14,25 +14,40 @@ function required(name: string) {
   return value;
 }
 
-export function getStripeTestConfig() {
+export function getStripeEnvironment() {
   const environment = process.env.STRIPE_ENVIRONMENT ?? "test";
-  if (environment !== "test") {
-    throw new Error("Stripe producción está bloqueado hasta validar el flujo completo en test.");
+  if (environment !== "test" && environment !== "production") {
+    throw new Error("STRIPE_ENVIRONMENT debe ser test o production.");
   }
+  return environment;
+}
+
+export function getStripeConfig() {
+  const environment = getStripeEnvironment();
 
   const apiKey = required("STRIPE_API_KEY");
+  if (environment === "production") {
+    if (process.env.STRIPE_PRODUCTION_ENABLED !== "true") {
+      throw new Error("Stripe producción requiere STRIPE_PRODUCTION_ENABLED=true.");
+    }
+    if (!/^(sk|rk)_live_/.test(apiKey)) throw new Error("Producción requiere una clave Stripe live.");
+    const priceId = required("STRIPE_PRODUCTION_PRICE_ID");
+    if (priceId !== STRIPE_PRODUCTION_PRICE_ID) {
+      throw new Error("El Price ID productivo no coincide con el plan Nexaro aprobado.");
+    }
+    return { apiKey, priceId, environment };
+  }
+
   const priceId = required("STRIPE_TEST_PRICE_ID");
   if (!/^(sk|rk)_test_/.test(apiKey)) throw new Error("STRIPE_API_KEY debe ser una clave de test.");
-  if (priceId === STRIPE_PRODUCTION_PRICE_ID) {
-    throw new Error("STRIPE_TEST_PRICE_ID no puede contener el Price ID de producción.");
-  }
+  if (priceId === STRIPE_PRODUCTION_PRICE_ID) throw new Error("El Price ID live no se admite en test.");
   if (!priceId.startsWith("price_")) throw new Error("STRIPE_TEST_PRICE_ID no es válido.");
 
-  return { apiKey, priceId };
+  return { apiKey, priceId, environment };
 }
 
 export function getStripe() {
-  const { apiKey } = getStripeTestConfig();
+  const { apiKey } = getStripeConfig();
   stripeClient ??= new Stripe(apiKey, {
     apiVersion: STRIPE_API_VERSION,
     typescript: true,

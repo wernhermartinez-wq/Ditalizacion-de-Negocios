@@ -8,7 +8,7 @@ import {
   createIntegrationIdentifier,
   getAppUrl,
   getStripe,
-  getStripeTestConfig,
+  getStripeConfig,
 } from "@/lib/stripe/server";
 
 async function getBillingContext() {
@@ -37,7 +37,7 @@ export async function startStripeCheckout() {
 
   try {
     const stripe = getStripe();
-    const { priceId } = getStripeTestConfig();
+    const { priceId } = getStripeConfig();
     const appUrl = getAppUrl();
     const anchor = getNextBillingAnchor();
     const metadata = {

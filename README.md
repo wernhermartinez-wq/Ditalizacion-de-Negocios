@@ -21,7 +21,7 @@ La aplicación utiliza únicamente datos persistidos. Cuando un módulo todavía
 - Evolución histórica basada exclusivamente en diagnósticos validados.
 - Catálogo formativo, recomendaciones por brecha e itinerario con seguimiento de progreso.
 - Módulo adicional de visibilidad SEO/IA, preparado para proveedores externos y ejecución programada.
-- Checkout de suscripción con Stripe Managed Payments, sincronización por webhooks y Customer Portal, bloqueado en modo test hasta su validación.
+- Checkout de suscripción con Stripe Managed Payments, sincronización por webhooks y Customer Portal, con activación productiva protegida por configuración explícita.
 
 ### Pendiente o pospuesto
 
