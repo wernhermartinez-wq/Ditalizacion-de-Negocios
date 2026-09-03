@@ -21,6 +21,7 @@ La aplicación utiliza únicamente datos persistidos. Cuando un módulo todavía
 - Evolución histórica basada exclusivamente en diagnósticos validados.
 - Catálogo formativo, recomendaciones por brecha e itinerario con seguimiento de progreso.
 - Módulo adicional de visibilidad SEO/IA, preparado para proveedores externos y ejecución programada.
+- Checkout de suscripción con Stripe Managed Payments, sincronización por webhooks y Customer Portal, bloqueado en modo test hasta su validación.
 
 ### Pendiente o pospuesto
 
@@ -43,6 +44,7 @@ Las decisiones de alcance y arquitectura se mantienen en [`decisiones-arquitectu
 - Node.js 22 o superior.
 - npm 11 o superior.
 - Un proyecto Supabase activo.
+- Una cuenta Stripe con acceso a Managed Payments para validar la facturación.
 - Una clave pública moderna de Supabase (`sb_publishable_...`).
 - Una clave privada de servidor para las operaciones administrativas.
 
@@ -102,6 +104,8 @@ El módulo de Visibilidad funciona únicamente con los proveedores que tengan cr
 
 La operación programada y el formato de las solicitudes están documentados en [`docs/visibility-operations.md`](./docs/visibility-operations.md).
 
+La configuración, los eventos y la lista de validación de Stripe están documentados en [`docs/stripe-billing.md`](./docs/stripe-billing.md). El Price ID productivo de 95 EUR/mes queda documentado allí, pero el código solo admite claves y Price IDs de test.
+
 ## Comandos
 
 ```powershell
@@ -136,6 +140,7 @@ npm run build
 - `src/lib/courses.ts`: relación entre cursos, competencias y brechas del diagnóstico.
 - `src/lib/auth-rate-limit.ts`: límite de intentos de autenticación respaldado por Supabase.
 - `src/lib/visibility/`: proveedores, métricas, recomendaciones y ejecución de Visibilidad.
+- `src/lib/stripe/`: cálculo del día 15, cliente de servidor y reconciliación de webhooks.
 - `src/lib/supabase/`: clientes de navegador, servidor y administración.
 - `supabase/migrations/`: esquema SQL versionado y políticas RLS.
 - `supabase/tests/`: comprobaciones SQL de seguridad y aislamiento.

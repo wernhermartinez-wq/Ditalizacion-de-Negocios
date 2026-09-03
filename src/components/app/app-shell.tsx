@@ -6,7 +6,7 @@ import { useState } from "react";
 import {
   BookOpen, Building2, ChartNoAxesCombined, CheckSquare2, ChevronDown,
   ClipboardCheck, FolderKanban, LayoutDashboard, LogOut, Menu, Route,
-  Settings2, UserRound, Wrench, X,
+  Settings2, UserRound, WalletCards, Wrench, X,
   ShieldCheck, ScanSearch,
 } from "lucide-react";
 import { logout } from "@/app/app/actions";
@@ -16,6 +16,7 @@ const navItems = [
   { href: "/app", label: "Inicio", icon: LayoutDashboard },
   { href: "/app/perfil", label: "Mi empresa", icon: Building2 },
   { href: "/app/configuracion", label: "Mi perfil", icon: UserRound },
+  { href: "/app/facturacion", label: "Facturación", icon: WalletCards },
   { href: "/app/diagnostico", label: "Diagnóstico", icon: ClipboardCheck },
   { href: "/app/evolucion", label: "Evolución", icon: ChartNoAxesCombined },
   { href: "/app/visibilidad", label: "Visibilidad SEO e IA", icon: ScanSearch },

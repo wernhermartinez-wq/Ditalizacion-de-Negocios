@@ -975,6 +975,95 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_subscriptions: {
+        Row: {
+          access_enabled: boolean
+          cancel_at_period_end: boolean
+          created_at: string
+          id: string
+          last_stripe_event_created: number
+          next_billing_at: string | null
+          organization_id: string
+          status: string
+          stripe_checkout_session_id: string | null
+          stripe_customer_id: string
+          stripe_price_id: string
+          stripe_subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_enabled?: boolean
+          cancel_at_period_end?: boolean
+          created_at?: string
+          id?: string
+          last_stripe_event_created?: number
+          next_billing_at?: string | null
+          organization_id: string
+          status: string
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id: string
+          stripe_price_id: string
+          stripe_subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_enabled?: boolean
+          cancel_at_period_end?: boolean
+          created_at?: string
+          id?: string
+          last_stripe_event_created?: number
+          next_billing_at?: string | null
+          organization_id?: string
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id?: string
+          stripe_price_id?: string
+          stripe_subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stripe_webhook_events: {
+        Row: {
+          error_message: string | null
+          event_created: number
+          event_type: string
+          processed_at: string | null
+          received_at: string
+          status: string
+          stripe_event_id: string
+        }
+        Insert: {
+          error_message?: string | null
+          event_created: number
+          event_type: string
+          processed_at?: string | null
+          received_at?: string
+          status: string
+          stripe_event_id: string
+        }
+        Update: {
+          error_message?: string | null
+          event_created?: number
+          event_type?: string
+          processed_at?: string | null
+          received_at?: string
+          status?: string
+          stripe_event_id?: string
+        }
+        Relationships: []
+      }
       tool_integrations: {
         Row: {
           created_at: string

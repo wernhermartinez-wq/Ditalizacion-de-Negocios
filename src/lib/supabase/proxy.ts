@@ -42,5 +42,36 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(new URL("/app", request.url));
   }
 
+  const isAppPath = request.nextUrl.pathname === "/app" || request.nextUrl.pathname.startsWith("/app/");
+  const isBillingPath = request.nextUrl.pathname.startsWith("/app/facturacion");
+  if (
+    data?.claims &&
+    isAppPath &&
+    !isBillingPath &&
+    process.env.STRIPE_BILLING_ENFORCEMENT_ENABLED === "true"
+  ) {
+    const userId = typeof data.claims.sub === "string" ? data.claims.sub : null;
+    if (userId) {
+      const { data: membership } = await supabase
+        .from("organization_memberships")
+        .select("organization_id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      const { data: subscription } = membership
+        ? await supabase
+            .from("stripe_subscriptions")
+            .select("access_enabled")
+            .eq("organization_id", membership.organization_id)
+            .maybeSingle()
+        : { data: null };
+
+      if (!subscription?.access_enabled) {
+        return NextResponse.redirect(new URL("/app/facturacion", request.url));
+      }
+    }
+  }
+
   return response;
 }

@@ -754,3 +754,39 @@
   .assigned-course { grid-template-columns: 2.8rem minmax(0, 1fr); }
   .course-section-heading { align-items: flex-start; flex-direction: column; }
 }
+
+/* Facturación: una decisión contractual, no una tienda. */
+.billing-page { max-width: 78rem; margin: 0 auto; }
+.billing-heading { align-items: flex-start; }
+.billing-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 1rem; align-items: stretch; }
+.billing-plan-card, .billing-status-card { min-height: 30rem; padding: 1.35rem; }
+.billing-plan-card { display: flex; flex-direction: column; color: white; background: var(--ink-950); }
+.billing-plan-card header { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+.billing-plan-card header > span { color: #a9bdbf; font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.billing-plan-card header > strong { font: 650 2.35rem var(--font-display); }
+.billing-plan-card header small { margin-left: .2rem; color: #a9bdbf; font: 600 .65rem var(--font-data); }
+.billing-plan-card ul { margin: 2rem 0; padding: 0; display: grid; gap: .85rem; list-style: none; }
+.billing-plan-card li { display: flex; gap: .55rem; align-items: center; color: #d9e4e5; font-size: .7rem; }
+.billing-plan-card li svg { flex: 0 0 auto; color: #72c9c1; }
+.billing-plan-card form { margin-top: auto; }
+.billing-plan-card .button-primary { width: 100%; display: inline-flex; justify-content: center; gap: .45rem; align-items: center; }
+.billing-note { margin-top: .8rem; color: #9eb3b6; font-size: .54rem; line-height: 1.45; }
+.billing-active { margin-top: auto; min-height: 2.6rem; display: flex; justify-content: center; gap: .4rem; align-items: center; border: 1px solid #5c8983; border-radius: .5rem; color: #c7ebe6; background: rgb(74 135 126 / .18); font-size: .65rem; font-weight: 700; }
+.billing-status-card { display: flex; flex-direction: column; }
+.billing-status-icon { width: 3rem; height: 3rem; display: grid; place-items: center; border-radius: .75rem; color: var(--accent-strong); background: var(--accent-soft); }
+.billing-status-card .eyebrow { margin-top: 1.4rem; }
+.billing-status-card h2 { margin: .3rem 0 1.5rem; font: 650 1.6rem var(--font-display); text-transform: capitalize; }
+.billing-status-card dl { margin: 0; display: grid; }
+.billing-status-card dl div { padding: .8rem 0; display: flex; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--line); }
+.billing-status-card dt { color: var(--ink-600); font-size: .6rem; }
+.billing-status-card dd { margin: 0; font-size: .62rem; font-weight: 700; text-align: right; }
+.billing-status-card form { margin-top: auto; }
+.billing-status-card .button-secondary { width: 100%; display: inline-flex; justify-content: center; gap: .4rem; align-items: center; }
+.billing-webhook-copy { margin: .8rem 0 0; color: var(--ink-600); font-size: .54rem; line-height: 1.45; }
+.billing-result-page { min-height: calc(100dvh - 4rem); display: grid; place-items: center; }
+.billing-result-card { max-width: 38rem; min-height: 23rem; padding: 2rem; display: grid; place-items: center; align-content: center; text-align: center; }
+.billing-result-card > svg { color: var(--accent); }
+.billing-result-card h1 { margin: .35rem 0; font: 650 1.8rem var(--font-display); }
+.billing-result-card > p:not(.eyebrow) { max-width: 30rem; color: var(--ink-600); font-size: .7rem; line-height: 1.55; }
+.billing-result-card .button-primary { margin-top: .8rem; }
+@media (max-width: 760px) { .billing-grid { grid-template-columns: 1fr; }.billing-plan-card, .billing-status-card { min-height: 26rem; } }
