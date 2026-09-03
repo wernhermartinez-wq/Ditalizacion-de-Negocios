@@ -61,12 +61,6 @@ set email = excluded.email,
     last_sign_in_at = excluded.last_sign_in_at,
     updated_at = now();
 
-insert into public.platform_admins (user_id, granted_by)
-select id, id
-from auth.users
-where lower(email) = 'wernher.martinez@gmail.com'
-on conflict (user_id) do nothing;
-
 alter table public.platform_users enable row level security;
 alter table public.platform_admins enable row level security;
 alter table public.nexaro_work_entries enable row level security;

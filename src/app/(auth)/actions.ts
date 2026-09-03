@@ -2,6 +2,13 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { isPlatformAdmin } from "@/lib/admin";
+import {
+  AUTH_FAILURE_MESSAGE,
+  isAuthRateLimited,
+  recordAuthFailure,
+  requestIp,
+  type AuthAttemptAction,
+} from "@/lib/auth-rate-limit";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -14,14 +21,42 @@ function message(path: string, type: "error" | "success", text: string): never {
   redirect(`${path}?${params.toString()}`);
 }
 
+async function authAttemptContext(email: string, action: AuthAttemptAction, path: string) {
+  const requestHeaders = await headers();
+
+  try {
+    if (await isAuthRateLimited(email)) message(path, "error", AUTH_FAILURE_MESSAGE);
+  } catch (error) {
+    console.error("Auth rate-limit check failed.", error);
+    if (process.env.NODE_ENV === "production") message(path, "error", AUTH_FAILURE_MESSAGE);
+
+    return { failed: async () => undefined };
+  }
+
+  return {
+    async failed() {
+      try {
+        await recordAuthFailure(email, requestIp(requestHeaders), action);
+      } catch (error) {
+        console.error("Auth failure audit write failed.", error);
+        // The public response stays generic even if the audit write is unavailable.
+      }
+    },
+  };
+}
+
 export async function login(formData: FormData) {
   const email = value(formData, "email");
   const password = value(formData, "password");
   if (!email || !password) message("/login", "error", "Introduce tu correo y contraseña.");
 
+  const attempt = await authAttemptContext(email, "login", "/login");
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) message("/login", "error", "No hemos podido verificar esos datos de acceso.");
+  if (error) {
+    await attempt.failed();
+    message("/login", "error", AUTH_FAILURE_MESSAGE);
+  }
   const { data: claimsData } = await supabase.auth.getClaims();
   const userId = typeof claimsData?.claims?.sub === "string" ? claimsData.claims.sub : null;
   if (userId && (await isPlatformAdmin(supabase, userId))) redirect("/admin");
@@ -35,6 +70,7 @@ export async function register(formData: FormData) {
   if (!email || password.length < 8) message("/registro", "error", "Usa un correo válido y una contraseña de al menos 8 caracteres.");
   if (password !== confirmation) message("/registro", "error", "Las contraseñas no coinciden.");
 
+  const attempt = await authAttemptContext(email, "register", "/registro");
   const origin = (await headers()).get("origin") ?? "http://localhost:3000";
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
@@ -42,7 +78,10 @@ export async function register(formData: FormData) {
     password,
     options: { emailRedirectTo: `${origin}/auth/callback?next=/app` },
   });
-  if (error) message("/registro", "error", "No se pudo crear la cuenta. Revisa los datos e inténtalo de nuevo.");
+  if (error) {
+    await attempt.failed();
+    message("/registro", "error", AUTH_FAILURE_MESSAGE);
+  }
   if (data.session) redirect("/app");
   message("/login", "success", "Cuenta creada. Revisa tu correo para confirmar el acceso.");
 }
@@ -51,12 +90,16 @@ export async function recoverAccess(formData: FormData) {
   const email = value(formData, "email");
   if (!email) message("/recuperar-acceso", "error", "Introduce el correo de tu cuenta.");
 
+  const attempt = await authAttemptContext(email, "recover_access", "/recuperar-acceso");
   const origin = (await headers()).get("origin") ?? "http://localhost:3000";
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/callback?next=/actualizar-clave`,
   });
-  if (error) message("/recuperar-acceso", "error", "No se pudo iniciar la recuperación. Inténtalo de nuevo.");
+  if (error) {
+    await attempt.failed();
+    message("/recuperar-acceso", "error", AUTH_FAILURE_MESSAGE);
+  }
   message("/recuperar-acceso", "success", "Si existe una cuenta con ese correo, recibirás un enlace para continuar.");
 }
 

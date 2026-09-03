@@ -26,7 +26,9 @@ export async function updateSession(request: NextRequest) {
   });
 
   const { data } = await supabase.auth.getClaims();
-  const isProtected = request.nextUrl.pathname === "/app" || request.nextUrl.pathname.startsWith("/app/");
+  const isProtected = ["/app", "/admin"].some(
+    (path) => request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith(`${path}/`),
+  );
   const isPublicAuth = PUBLIC_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
 
   if (!data?.claims && isProtected) {

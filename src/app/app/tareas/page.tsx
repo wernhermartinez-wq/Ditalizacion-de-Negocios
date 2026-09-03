@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight, CheckCircle2, ListChecks } from "lucide-react";
 import { AuthMessage } from "@/components/auth/message";
+import { loadDiagnosticSnapshot, roadmapFromSnapshot } from "@/lib/diagnostic-snapshots";
 import { getCurrentOrganization } from "@/lib/organizations";
 import { buildRoadmap, roadmapTasks } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
@@ -40,7 +41,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
     .select("*")
     .eq("organization_id", organization.id)
     .eq("questionnaire_id", questionnaire.id)
-    .eq("status", "completed")
+    .in("status", ["completed", "validated"])
     .order("completed_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -75,7 +76,8 @@ export default async function TasksPage({ searchParams }: PageProps) {
     searchParams,
   ]);
   if (questionsResult.error || responsesResult.error || completionsResult.error) throw new Error("No se pudieron generar las tareas.");
-  const tasks = roadmapTasks(buildRoadmap(questionsResult.data ?? [], responsesResult.data ?? []));
+  const snapshot = diagnostic.status === "validated" ? await loadDiagnosticSnapshot(supabase, diagnostic.id) : null;
+  const tasks = roadmapTasks(snapshot ? roadmapFromSnapshot(snapshot.itemRows) : buildRoadmap(questionsResult.data ?? [], responsesResult.data ?? []));
   const taskByKey = new Map(tasks.map((task) => [task.id, task]));
   const completions = completionsResult.data ?? [];
   const completedKeys = new Set(completions.map((completion) => completion.task_key));
@@ -88,7 +90,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
         <div>
           <p className="eyebrow">{organization.name} · Ejecución</p>
           <h1>Próximas tareas derivadas del resultado.</h1>
-          <p className="page-description">Las acciones mantienen el orden de la hoja de ruta. Primero se ejecutan las tareas de las dimensiones con menor puntuación.</p>
+          <p className="page-description">Las acciones mantienen el orden de la hoja de ruta. {diagnostic.status === "validated" ? "Nexaro ha validado y congelado este plan." : "El plan es provisional hasta que Nexaro valide el diagnóstico."}</p>
         </div>
         <Link className="secondary-action" href="/app/hoja-de-ruta">Ver hoja de ruta <ArrowRight size={16} /></Link>
       </div>
@@ -144,7 +146,7 @@ export default async function TasksPage({ searchParams }: PageProps) {
           </div>
         ) : <p className="completed-tasks-empty">Cuando Nexaro complete y compruebe una tarea, aparecerá aquí con su fecha.</p>}
       </section>
-      <p className="tasks-source-note">Estas recomendaciones proceden del último diagnóstico. Cuando se complete uno nuevo, el orden y las acciones se recalcularán.</p>
+      <p className="tasks-source-note">{diagnostic.status === "validated" ? "Estas recomendaciones pertenecen al snapshot validado y no se recalculan." : "Estas recomendaciones son provisionales y se congelarán cuando Nexaro valide el diagnóstico."}</p>
     </main>
   );
 }

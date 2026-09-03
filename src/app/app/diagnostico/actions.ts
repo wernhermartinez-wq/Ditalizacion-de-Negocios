@@ -56,13 +56,6 @@ export async function saveDiagnostic(formData: FormData) {
   if (intent === "complete" && missingRequired) {
     diagnosticMessage("error", `Faltan ${missingRequired} respuestas aplicables para finalizar el diagnóstico.`);
   }
-  if (intent === "complete") {
-    const dimensionsWithoutApplicableAnswers = new Set(visibleQuestions.map((question) => question.dimension));
-    answers.filter((answer) => answer.value > 0).forEach((answer) => dimensionsWithoutApplicableAnswers.delete(answer.dimension));
-    if (dimensionsWithoutApplicableAnswers.size) {
-      diagnosticMessage("error", "Cada dimensión necesita al menos una respuesta aplicable para calcular un resultado fiable.");
-    }
-  }
   if (!answers.length) diagnosticMessage("error", "Responde al menos una pregunta antes de guardar.");
 
   let { data: diagnostic, error: diagnosticError } = await supabase
@@ -141,5 +134,5 @@ export async function saveDiagnostic(formData: FormData) {
   revalidatePath("/app");
   revalidatePath("/app/diagnostico");
   revalidatePath("/app/hoja-de-ruta");
-  diagnosticMessage("success", intent === "complete" ? "Diagnóstico finalizado. Tu resultado y hoja de ruta ya están disponibles." : "Borrador guardado correctamente.");
+  diagnosticMessage("success", intent === "complete" ? "Diagnóstico enviado. Nexaro revisará el resultado antes de validarlo." : "Borrador guardado correctamente.");
 }

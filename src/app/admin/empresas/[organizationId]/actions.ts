@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isPlatformAdmin } from "@/lib/admin";
-import { buildRoadmap, roadmapTasks } from "@/lib/roadmap";
+import { buildDiagnosticSnapshot, DIAGNOSTIC_FORMULA_VERSION, loadDiagnosticSnapshot, roadmapFromSnapshot } from "@/lib/diagnostic-snapshots";
+import { roadmapTasks } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
 import { workCategories } from "@/lib/work";
 
@@ -55,8 +56,8 @@ export async function addWorkEntry(organizationId: string, formData: FormData) {
   message(organizationId, "success", "Trabajo realizado registrado correctamente.");
 }
 
-export async function completeRoadmapTask(organizationId: string, diagnosticId: string, taskKey: string) {
-  if (!/^[0-9a-f-]{36}$/i.test(organizationId) || !/^[0-9a-f-]{36}$/i.test(diagnosticId) || !/^[A-Z]{3}-[1-3]$/.test(taskKey)) redirect("/admin");
+export async function validateDiagnostic(organizationId: string, diagnosticId: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(organizationId) || !/^[0-9a-f-]{36}$/i.test(diagnosticId)) redirect("/admin");
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = typeof claimsData?.claims?.sub === "string" ? claimsData.claims.sub : null;
@@ -70,15 +71,51 @@ export async function completeRoadmapTask(organizationId: string, diagnosticId: 
     .eq("organization_id", organizationId)
     .eq("status", "completed")
     .maybeSingle();
-  if (diagnosticError || !diagnostic) message(organizationId, "error", "No se pudo validar la tarea.");
+  if (diagnosticError || !diagnostic) message(organizationId, "error", "El diagnóstico ya no está pendiente de validación.");
 
   const [questionsResult, responsesResult] = await Promise.all([
     supabase.from("diagnostic_questions").select("*").eq("questionnaire_id", diagnostic.questionnaire_id).order("position"),
     supabase.from("diagnostic_responses").select("*").eq("diagnostic_id", diagnostic.id),
   ]);
-  if (questionsResult.error || responsesResult.error) message(organizationId, "error", "No se pudo comprobar la hoja de ruta.");
+  if (questionsResult.error || responsesResult.error) message(organizationId, "error", "No se pudo preparar la validación.");
 
-  const task = roadmapTasks(buildRoadmap(questionsResult.data ?? [], responsesResult.data ?? []))
+  const snapshot = buildDiagnosticSnapshot(questionsResult.data ?? [], responsesResult.data ?? []);
+  const { error } = await supabase.rpc("validate_diagnostic_snapshot", {
+    p_diagnostic_id: diagnostic.id,
+    p_formula_version: DIAGNOSTIC_FORMULA_VERSION,
+    p_scores: snapshot.scores,
+    p_roadmap: snapshot.roadmap,
+  });
+  if (error) message(organizationId, "error", "No se pudo validar y congelar el diagnóstico.");
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/empresas/${organizationId}`);
+  revalidatePath("/app");
+  revalidatePath("/app/diagnostico");
+  revalidatePath("/app/hoja-de-ruta");
+  revalidatePath("/app/tareas");
+  message(organizationId, "success", "Diagnóstico validado. El resultado y la hoja de ruta han quedado congelados.");
+}
+
+export async function completeRoadmapTask(organizationId: string, diagnosticId: string, taskKey: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(organizationId) || !/^[0-9a-f-]{36}$/i.test(diagnosticId) || !/^[A-Z]{3}-[1-3]$/.test(taskKey)) redirect("/admin");
+  const supabase = await createClient();
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const userId = typeof claimsData?.claims?.sub === "string" ? claimsData.claims.sub : null;
+  if (claimsError || !userId) redirect("/login");
+  if (!(await isPlatformAdmin(supabase, userId))) redirect("/app");
+
+  const { data: diagnostic, error: diagnosticError } = await supabase
+    .from("diagnostics")
+    .select("id")
+    .eq("id", diagnosticId)
+    .eq("organization_id", organizationId)
+    .eq("status", "validated")
+    .maybeSingle();
+  if (diagnosticError || !diagnostic) message(organizationId, "error", "No se pudo validar la tarea.");
+
+  const snapshot = await loadDiagnosticSnapshot(supabase, diagnostic.id);
+  const task = roadmapTasks(roadmapFromSnapshot(snapshot.itemRows))
     .find((candidate) => candidate.id === taskKey);
   if (!task) message(organizationId, "error", "Esta tarea no pertenece a la hoja de ruta actual.");
 
@@ -111,7 +148,7 @@ export async function reopenRoadmapTask(organizationId: string, diagnosticId: st
     .select("id")
     .eq("id", diagnosticId)
     .eq("organization_id", organizationId)
-    .eq("status", "completed")
+    .eq("status", "validated")
     .maybeSingle();
   if (diagnosticError || !diagnostic) message(organizationId, "error", "No se pudo validar la tarea.");
 

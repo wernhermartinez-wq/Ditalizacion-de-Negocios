@@ -71,6 +71,7 @@ const templates: Record<string, RoadmapTemplate> = {
 };
 
 export type RoadmapItem = RoadmapTemplate & {
+  dimensionId: string;
   dimension: string;
   code: string;
   color: string;
@@ -95,7 +96,9 @@ export type RoadmapTask = {
 export function buildRoadmap(questions: DiagnosticQuestion[], responses: DiagnosticResponse[]): RoadmapItem[] {
   const responseByQuestion = new Map(responses.map((response) => [response.question_id, response.value]));
   const scores = dimensionScores(questions, responses);
-  const ordered = [...scores].sort((a, b) => (a.score ?? 101) - (b.score ?? 101));
+  const ordered = scores
+    .filter((dimension) => dimension.score !== null)
+    .sort((a, b) => (a.score ?? 101) - (b.score ?? 101));
 
   return ordered.map((dimension, index) => {
     const phase = Math.floor(index / 2) + 1;
@@ -116,6 +119,7 @@ export function buildRoadmap(questions: DiagnosticQuestion[], responses: Diagnos
     };
     return {
       ...template,
+      dimensionId: dimension.key,
       dimension: dimension.name,
       code: dimension.code,
       color: dimension.color,

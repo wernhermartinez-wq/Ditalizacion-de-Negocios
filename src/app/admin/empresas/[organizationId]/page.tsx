@@ -5,10 +5,12 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Building2, CalendarDays, CheckCircle2, ClipboardList, Globe2, Mail, RotateCcw, ScanSearch, UserRound } from "lucide-react";
 import { AuthMessage } from "@/components/auth/message";
 import { SubmitButton } from "@/components/auth/submit-button";
-import { buildRoadmap, roadmapTasks } from "@/lib/roadmap";
+import { dimensionScores } from "@/lib/diagnostics";
+import { loadDiagnosticSnapshot, roadmapFromSnapshot } from "@/lib/diagnostic-snapshots";
+import { roadmapTasks } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
 import { workCategories, workCategoryLabel } from "@/lib/work";
-import { addWorkEntry, completeNexaroTask, completeRoadmapTask, reopenNexaroTask, reopenRoadmapTask } from "./actions";
+import { addWorkEntry, completeNexaroTask, completeRoadmapTask, reopenNexaroTask, reopenRoadmapTask, validateDiagnostic } from "./actions";
 
 export const metadata: Metadata = { title: "Empresa · Control Nexaro" };
 
@@ -55,7 +57,9 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
   if (responsesResult.error || completionsResult.error) throw new Error("No se pudo cargar el avance de la empresa.");
   const questions = questionsResult.data ?? [];
   const responses = responsesResult.data ?? [];
-  const allTasks = diagnostic?.status === "completed" ? roadmapTasks(buildRoadmap(questions, responses)) : [];
+  const snapshot = diagnostic?.status === "validated" ? await loadDiagnosticSnapshot(supabase, diagnostic.id) : null;
+  const allTasks = snapshot ? roadmapTasks(roadmapFromSnapshot(snapshot.itemRows)) : [];
+  const provisionalDimensions = diagnostic?.status === "completed" ? dimensionScores(questions, responses) : [];
   const completions = completionsResult.data ?? [];
   const completedKeys = new Set(completions.map((completion) => completion.task_key));
   const tasks = allTasks.filter((task) => !completedKeys.has(task.id));
@@ -75,9 +79,9 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
       <div className="admin-company-hero">
         <div className="admin-company-hero-mark">{organization.name.slice(0, 2).toUpperCase()}</div>
         <div><p>Expediente de empresa</p><h1>{organization.name}</h1><span>{organization.sector ?? "Sector sin definir"} · {organization.city ?? organization.country}</span></div>
-        <div className={`admin-diagnostic-state ${diagnostic?.status === "completed" ? "complete" : "pending"}`}>
+        <div className={`admin-diagnostic-state ${diagnostic?.status === "validated" ? "complete" : "pending"}`}>
           <small>Diagnóstico comercial</small>
-          <strong>{diagnostic?.status === "completed" ? `${Math.round(diagnostic.provisional_score ?? 0)}/100` : diagnostic ? "En curso" : "Pendiente"}</strong>
+          <strong>{diagnostic?.status === "validated" ? `${Math.round(diagnostic.provisional_score ?? 0)}/100` : diagnostic?.status === "completed" ? "Por validar" : diagnostic ? "En curso" : "Pendiente"}</strong>
         </div>
       </div>
 
@@ -90,6 +94,19 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
 
       <div className="admin-company-columns">
         <div className="admin-company-primary">
+          {diagnostic?.status === "completed" && (
+            <section className="admin-panel admin-diagnostic-review">
+              <div className="admin-section-title"><div><p>Revisión requerida</p><h2>Validar diagnóstico enviado</h2></div><span>Resultado provisional</span></div>
+              <p>Comprueba las respuestas antes de confirmar. Al validar se congelarán la puntuación y la hoja de ruta; las dimensiones no aplicables quedarán como “Sin evaluar”.</p>
+              <div className="admin-diagnostic-preview">
+                {provisionalDimensions.map((dimension) => <span key={dimension.key}><small>{dimension.code}</small><strong>{dimension.score === null ? "Sin evaluar" : Math.round(dimension.score)}</strong></span>)}
+              </div>
+              <form action={validateDiagnostic.bind(null, organization.id, diagnostic.id)}>
+                <SubmitButton pendingLabel="Validando…">Validar resultado y hoja de ruta</SubmitButton>
+              </form>
+            </section>
+          )}
+
           <section className="admin-panel">
             <div className="admin-section-title"><div><p>Intervención</p><h2>Registrar trabajo realizado</h2></div><span>Visible para el cliente</span></div>
             <AuthMessage error={messages.error} success={messages.success} />
@@ -120,7 +137,7 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
             <div className="admin-section-title"><div><p>Hoja de ruta</p><h2>Tareas pendientes sugeridas</h2></div><span>{tasks.length} acciones</span></div>
             {tasks.length && diagnostic ? <div className="admin-pending-tasks">{tasks.map((task) => (
               <article key={task.id} style={{ "--task-color": task.color } as CSSProperties}><i /><div><strong>{task.title}</strong><small>{task.code} · {task.dimension} · {task.period}</small></div><form action={completeRoadmapTask.bind(null, organization.id, diagnostic.id, task.id)}><button type="submit"><CheckCircle2 size={15} /> Marcar realizada</button></form></article>
-            ))}</div> : <div className="admin-empty compact"><ClipboardList size={22} /><strong>{diagnostic?.status === "completed" ? "No quedan tareas pendientes." : "El diagnóstico comercial no está completado."}</strong><span>{diagnostic?.status === "completed" ? "Todas las acciones de esta hoja de ruta están realizadas." : "Las tareas aparecerán cuando la empresa finalice sus respuestas."}</span></div>}
+            ))}</div> : <div className="admin-empty compact"><ClipboardList size={22} /><strong>{diagnostic?.status === "validated" ? "No quedan tareas pendientes." : diagnostic?.status === "completed" ? "La hoja de ruta espera validación." : "El diagnóstico comercial no está completado."}</strong><span>{diagnostic?.status === "validated" ? "Todas las acciones de esta hoja de ruta están realizadas." : diagnostic?.status === "completed" ? "Valida el diagnóstico para congelar y activar sus tareas." : "Las tareas aparecerán cuando la empresa finalice sus respuestas."}</span></div>}
           </section>
 
           <section className="admin-panel">

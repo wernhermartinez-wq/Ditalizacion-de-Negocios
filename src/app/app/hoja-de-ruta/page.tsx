@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2, ClipboardList, Target } from "lucide-react";
 import { getCurrentOrganization } from "@/lib/organizations";
+import { loadDiagnosticSnapshot, roadmapFromSnapshot } from "@/lib/diagnostic-snapshots";
 import { buildRoadmap } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
 
@@ -30,7 +31,7 @@ export default async function RoadmapPage() {
     .select("*")
     .eq("organization_id", organization.id)
     .eq("questionnaire_id", questionnaire.id)
-    .eq("status", "completed")
+    .in("status", ["completed", "validated"])
     .order("completed_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -56,9 +57,12 @@ export default async function RoadmapPage() {
   ]);
   if (questionsResult.error || responsesResult.error) throw new Error("No se pudo generar la hoja de ruta.");
 
-  const roadmap = buildRoadmap(questionsResult.data ?? [], responsesResult.data ?? []);
-  const completedDate = diagnostic.completed_at
-    ? new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric" }).format(new Date(diagnostic.completed_at))
+  const isValidated = diagnostic.status === "validated";
+  const snapshot = isValidated ? await loadDiagnosticSnapshot(supabase, diagnostic.id) : null;
+  const roadmap = snapshot ? roadmapFromSnapshot(snapshot.itemRows) : buildRoadmap(questionsResult.data ?? [], responsesResult.data ?? []);
+  const resultDate = diagnostic.validated_at ?? diagnostic.completed_at;
+  const completedDate = resultDate
+    ? new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric" }).format(new Date(resultDate))
     : "hoy";
 
   return (
@@ -67,14 +71,14 @@ export default async function RoadmapPage() {
         <div>
           <p className="eyebrow">{organization.name} · Hoja de ruta</p>
           <h1>Un plan de 90 días basado en tus brechas reales.</h1>
-          <p className="page-description">Prioridades generadas desde el diagnóstico completado el {completedDate}. Cada bloque explica qué hacer y qué evidencia confirma el avance.</p>
+          <p className="page-description">Prioridades {isValidated ? "validadas y congeladas" : "provisionales"} desde el diagnóstico del {completedDate}. Cada bloque explica qué hacer y qué evidencia confirma el avance.</p>
         </div>
-        <span className="real-data-badge"><CheckCircle2 size={16} /> Generada desde el diagnóstico</span>
+        <span className="real-data-badge"><CheckCircle2 size={16} /> {isValidated ? "Validada por Nexaro" : "Pendiente de validación"}</span>
       </div>
 
       <section className="roadmap-summary" aria-label="Resumen de la hoja de ruta">
-        <div><small>Nivel actual</small><strong>{Math.round(diagnostic.provisional_score ?? 0)}<span>/100</span></strong></div>
-        <div><small>Frentes de trabajo</small><strong>6</strong></div>
+        <div><small>Nivel actual</small><strong>{diagnostic.provisional_score === null ? "Sin evaluar" : Math.round(diagnostic.provisional_score)}{diagnostic.provisional_score !== null && <span>/100</span>}</strong></div>
+        <div><small>Frentes de trabajo</small><strong>{roadmap.length}</strong></div>
         <div><small>Horizonte</small><strong>90<span> días</span></strong></div>
         <p><Target size={19} /> Empieza por los dos ámbitos con menor puntuación; evita abrir todas las iniciativas a la vez.</p>
       </section>
@@ -95,7 +99,7 @@ export default async function RoadmapPage() {
                       <span className="dimension-code">{item.code}</span>
                       <span>{item.dimension}</span>
                       <b>{item.priority}</b>
-                      <strong>{item.score === null ? "N/A" : Math.round(item.score)}</strong>
+                      <strong>{item.score === null ? "Sin evaluar" : Math.round(item.score)}</strong>
                     </div>
                     <h3>{item.title}</h3>
                     <p>{item.objective}</p>

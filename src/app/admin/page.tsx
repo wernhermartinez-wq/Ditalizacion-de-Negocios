@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ArrowRight, Building2, CheckCircle2, CircleDashed, ClipboardCheck, Clock3, UsersRound } from "lucide-react";
 import { CreateCompanyDialog } from "@/components/admin/create-company-dialog";
 import { AuthMessage } from "@/components/auth/message";
-import { buildRoadmap, roadmapTasks } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Control Nexaro" };
@@ -21,20 +20,18 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     .eq("is_active", true)
     .single();
 
-  const [usersResult, profilesResult, membershipsResult, organizationsResult, diagnosticsResult, responsesResult, workResult, questionsResult, registrationsResult] = await Promise.all([
+  const [usersResult, profilesResult, membershipsResult, organizationsResult, diagnosticsResult, workResult, registrationsResult, roadmapsResult, roadmapItemsResult] = await Promise.all([
     supabase.from("platform_users").select("*").order("registered_at", { ascending: false }),
     supabase.from("profiles").select("*"),
     supabase.from("organization_memberships").select("*"),
     supabase.from("organizations").select("*").order("created_at", { ascending: false }),
     supabase.from("diagnostics").select("*").order("created_at", { ascending: false }),
-    supabase.from("diagnostic_responses").select("*"),
     supabase.from("nexaro_work_entries").select("*"),
-    activeQuestionnaire
-      ? supabase.from("diagnostic_questions").select("*").eq("questionnaire_id", activeQuestionnaire.id).order("position")
-      : Promise.resolve({ data: [], error: null }),
     supabase.from("company_registrations").select("*").order("created_at", { ascending: false }),
+    supabase.from("roadmaps").select("id, assessment_id"),
+    supabase.from("roadmap_items").select("roadmap_id, actions"),
   ]);
-  const firstError = [usersResult, profilesResult, membershipsResult, organizationsResult, diagnosticsResult, responsesResult, workResult, questionsResult, registrationsResult].find((result) => result.error)?.error;
+  const firstError = [usersResult, profilesResult, membershipsResult, organizationsResult, diagnosticsResult, workResult, registrationsResult, roadmapsResult, roadmapItemsResult].find((result) => result.error)?.error;
   if (firstError) throw new Error("No se pudo cargar el control administrativo.");
 
   const users = usersResult.data ?? [];
@@ -42,14 +39,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const memberships = membershipsResult.data ?? [];
   const organizations = organizationsResult.data ?? [];
   const diagnostics = diagnosticsResult.data ?? [];
-  const responses = responsesResult.data ?? [];
   const workEntries = workResult.data ?? [];
-  const questions = questionsResult.data ?? [];
+  const roadmaps = roadmapsResult.data ?? [];
+  const roadmapItems = roadmapItemsResult.data ?? [];
   const pendingRegistrations = (registrationsResult.data ?? []).filter((registration) => registration.status === "pending");
   const profileByUser = new Map(profiles.map((profile) => [profile.user_id, profile]));
   const userById = new Map(users.map((user) => [user.user_id, user]));
   const activeDiagnostics = diagnostics.filter((diagnostic) => diagnostic.questionnaire_id === activeQuestionnaire?.id);
-  const completedCount = activeDiagnostics.filter((diagnostic) => diagnostic.status === "completed").length;
+  const completedCount = activeDiagnostics.filter((diagnostic) => diagnostic.status === "validated").length;
   const usersWithoutCompany = users.filter((user) => !memberships.some((membership) => membership.user_id === user.user_id));
 
   return (
@@ -64,7 +61,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       <section className="admin-kpis" aria-label="Resumen administrativo">
         <article><UsersRound size={20} /><span><small>Usuarios registrados</small><strong>{users.length}</strong></span></article>
         <article><Building2 size={20} /><span><small>Empresas activas</small><strong>{organizations.length}</strong></span></article>
-        <article><ClipboardCheck size={20} /><span><small>Diagnósticos completos</small><strong>{completedCount}</strong></span></article>
+        <article><ClipboardCheck size={20} /><span><small>Diagnósticos validados</small><strong>{completedCount}</strong></span></article>
         <article><CheckCircle2 size={20} /><span><small>Trabajos registrados</small><strong>{workEntries.length}</strong></span></article>
       </section>
 
@@ -94,16 +91,18 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               const ownerUser = ownerMembership ? userById.get(ownerMembership.user_id) : null;
               const ownerProfile = ownerMembership ? profileByUser.get(ownerMembership.user_id) : null;
               const diagnostic = activeDiagnostics.find((item) => item.organization_id === organization.id);
-              const completed = diagnostic?.status === "completed";
-              const diagnosticResponses = diagnostic ? responses.filter((response) => response.diagnostic_id === diagnostic.id) : [];
-              const taskCount = completed ? roadmapTasks(buildRoadmap(questions, diagnosticResponses)).length : 0;
+              const completed = diagnostic?.status === "validated";
+              const roadmap = diagnostic ? roadmaps.find((item) => item.assessment_id === diagnostic.id) : null;
+              const taskCount = roadmapItems
+                .filter((item) => item.roadmap_id === roadmap?.id)
+                .reduce((sum, item) => sum + (Array.isArray(item.actions) ? item.actions.length : 0), 0);
               const companyWork = workEntries.filter((entry) => entry.organization_id === organization.id).length;
               return (
                 <Link className="admin-company-row" href={`/admin/empresas/${organization.id}`} key={organization.id}>
                   <span className="admin-company-mark">{organization.name.slice(0, 2).toUpperCase()}</span>
                   <span className="admin-company-identity"><strong>{organization.name}</strong><small>{ownerProfile?.full_name ?? "Responsable sin nombre"} · {ownerUser?.email ?? "Sin correo"}</small></span>
                   <span><small>Sector</small><strong>{organization.sector ?? "Sin definir"}</strong></span>
-                  <span><small>Diagnóstico</small><strong className={completed ? "status-complete" : "status-pending"}>{completed ? `${Math.round(diagnostic.provisional_score ?? 0)}/100` : diagnostic ? "En curso" : "Pendiente"}</strong></span>
+                  <span><small>Diagnóstico</small><strong className={completed ? "status-complete" : "status-pending"}>{completed ? `${Math.round(diagnostic.provisional_score ?? 0)}/100` : diagnostic?.status === "completed" ? "Por validar" : diagnostic ? "En curso" : "Pendiente"}</strong></span>
                   <span><small>Intervenciones</small><strong>{companyWork}</strong></span>
                   <span><small>Tareas sugeridas</small><strong>{taskCount || "—"}</strong></span>
                   <ArrowRight size={18} />

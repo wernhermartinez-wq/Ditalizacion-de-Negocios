@@ -152,6 +152,15 @@
 .admin-member-list strong { font-size: 0.7rem; }
 .admin-member-list small { margin-top: 0.2rem; display: flex; gap: 0.25rem; align-items: center; color: var(--ink-600); font-size: 0.58rem; }
 .admin-member-list b { padding: 0.25rem 0.4rem; border-radius: 2rem; color: #247456; background: #e7f5ee; font-size: 0.55rem; }
+.admin-diagnostic-review { padding-bottom: 1rem; border-color: #e2a27b; background: #fff8ef; }
+.admin-diagnostic-review > p { margin: 0; padding: 1rem 1.2rem 0; color: var(--ink-600); font-size: 0.68rem; line-height: 1.55; }
+.admin-diagnostic-preview { padding: 1rem 1.2rem; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.5rem; }
+.admin-diagnostic-preview span { padding: 0.65rem; border: 1px solid var(--line); border-radius: 0.5rem; text-align: center; background: var(--surface); }
+.admin-diagnostic-preview small, .admin-diagnostic-preview strong { display: block; }
+.admin-diagnostic-preview small { color: var(--accent-strong); font: 700 0.52rem var(--font-data); }
+.admin-diagnostic-preview strong { margin-top: 0.25rem; font-size: 0.68rem; }
+.admin-diagnostic-review form { padding: 0 1.2rem; display: flex; justify-content: flex-end; }
+.admin-diagnostic-review form button { min-height: 2.6rem; padding: 0.65rem 0.9rem; border: 0; border-radius: 0.5rem; color: white; background: var(--accent); font-size: 0.65rem; font-weight: 700; cursor: pointer; }
 
 @media (max-width: 1100px) {
   .admin-company-row { grid-template-columns: auto minmax(11rem, 2fr) repeat(3, minmax(5.5rem, 1fr)) auto; }
@@ -170,6 +179,7 @@
   .admin-sidebar-footer > small { display: none; }
   .admin-sidebar-footer button { margin: 0; }
   .admin-topbar { display: none; }
+  .admin-diagnostic-preview { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .admin-kpis, .admin-company-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-company-row { grid-template-columns: auto minmax(10rem, 1fr) minmax(5rem, auto) auto; }
   .admin-company-row > span:nth-of-type(3), .admin-company-row > span:nth-of-type(5), .admin-company-row > span:nth-of-type(6) { display: none; }
@@ -195,6 +205,7 @@
   .admin-work-form .field-wide, .admin-work-form-footer { grid-column: auto; }
   .admin-work-form-footer { align-items: stretch; flex-direction: column; }
   .admin-work-timeline article { grid-template-columns: 1fr; gap: 0.45rem; }
+  .admin-diagnostic-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* Nexaro 2026 brand palette */

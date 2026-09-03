@@ -51,7 +51,7 @@ export function AppShell({ children, email, fullName, organizationName, isAdmin 
       <button className={`nav-scrim ${open ? "show" : ""}`} onClick={() => setOpen(false)} aria-label="Cerrar navegación" tabIndex={open ? 0 : -1} />
       <aside className={`sidebar ${open ? "open" : ""}`}>
         <div className="sidebar-brand"><Link href="/app" className="brand-logo-link" aria-label="Nexaro, inicio"><BrandLogo className="sidebar-brand-logo" /></Link><button className="icon-button close-nav" onClick={() => setOpen(false)} aria-label="Cerrar menú"><X size={20} /></button></div>
-        <Link className="org-switcher" href="/app/perfil" onClick={() => setOpen(false)}><span className="org-mark">{initials(company)}</span><span><strong>{company}</strong><small>{organizationName ? "Empresa activa" : "Completa los datos reales"}</small></span><ChevronDown size={16} /></Link>
+        <Link className="org-switcher" href="/app/perfil" onClick={() => setOpen(false)}><span className="org-mark">{initials(company)}</span><span><strong>{company}</strong><small>{organizationName ? "Contexto de empresa" : "Completa los datos reales"}</small></span><ChevronDown size={16} /></Link>
         <nav className="main-nav" aria-label="Navegación principal">
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
@@ -59,7 +59,7 @@ export function AppShell({ children, email, fullName, organizationName, isAdmin 
           })}
         </nav>
         <div className="sidebar-footer">
-          {isAdmin && <Link className="admin-entry-link" href="/admin"><ShieldCheck size={17} /> Control Nexaro</Link>}
+          {isAdmin && <Link className="admin-entry-link" href="/admin"><ShieldCheck size={17} /> Administración global</Link>}
           <div className="user-summary"><span className="avatar">{initials(displayName)}</span><span><strong>{displayName}</strong><small>{email}</small></span></div>
           <form action={logout}><button className="signout" type="submit"><LogOut size={17} /> Cerrar sesión</button></form>
         </div>

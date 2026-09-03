@@ -3,6 +3,7 @@ import { Dashboard } from "@/components/app/dashboard";
 import { getCurrentOrganization } from "@/lib/organizations";
 import { createClient } from "@/lib/supabase/server";
 import { dimensionScores } from "@/lib/diagnostics";
+import { dimensionsFromSnapshot, loadDiagnosticSnapshot, roadmapFromSnapshot } from "@/lib/diagnostic-snapshots";
 import { buildRoadmap, roadmapTasks } from "@/lib/roadmap";
 import { redirect } from "next/navigation";
 
@@ -44,9 +45,10 @@ export default async function DashboardPage() {
   const questions = questionsResult.data ?? [];
   const responses = responsesResult.data ?? [];
   const completedTaskKeys = new Set((completionsResult.data ?? []).map((completion) => completion.task_key));
-  const tasks = diagnosticRow?.status === "completed"
-    ? roadmapTasks(buildRoadmap(questions, responses)).filter((task) => !completedTaskKeys.has(task.id)).slice(0, 3)
-    : [];
+  const isSubmitted = diagnosticRow?.status === "completed" || diagnosticRow?.status === "validated";
+  const snapshot = diagnosticRow?.status === "validated" ? await loadDiagnosticSnapshot(supabase, diagnosticRow.id) : null;
+  const roadmap = snapshot ? roadmapFromSnapshot(snapshot.itemRows) : isSubmitted ? buildRoadmap(questions, responses) : [];
+  const tasks = roadmapTasks(roadmap).filter((task) => !completedTaskKeys.has(task.id)).slice(0, 3);
 
   return (
     <Dashboard
@@ -57,7 +59,7 @@ export default async function DashboardPage() {
         score: diagnosticRow?.provisional_score ?? null,
         answered: responses.length,
         total: questions.length,
-        dimensions: dimensionScores(questions, responses),
+        dimensions: snapshot ? dimensionsFromSnapshot(snapshot.scoreRows) : dimensionScores(questions, responses),
       }}
     />
   );

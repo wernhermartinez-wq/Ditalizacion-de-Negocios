@@ -6,6 +6,7 @@ import { ArrowRight, BarChart3, CheckCircle2, ClipboardCheck, Info } from "lucid
 import { DiagnosticQuestionnaire } from "@/components/app/diagnostic-questionnaire";
 import { AuthMessage } from "@/components/auth/message";
 import { dimensionScores, scoreLabel } from "@/lib/diagnostics";
+import { dimensionsFromSnapshot, loadDiagnosticSnapshot } from "@/lib/diagnostic-snapshots";
 import { getCurrentOrganization } from "@/lib/organizations";
 import { createClient } from "@/lib/supabase/server";
 
@@ -59,8 +60,10 @@ export default async function DiagnosticPage({ searchParams }: PageProps) {
 
   const responses = responsesResult.data ?? [];
   const responseByQuestion = new Map(responses.map((response) => [response.question_id, response.value]));
-  const scores = dimensionScores(questions, responses);
-  const isCompleted = diagnostic?.status === "completed";
+  const isCompleted = diagnostic?.status === "completed" || diagnostic?.status === "validated";
+  const isValidated = diagnostic?.status === "validated";
+  const snapshot = isValidated && diagnostic ? await loadDiagnosticSnapshot(supabase, diagnostic.id) : null;
+  const scores = snapshot ? dimensionsFromSnapshot(snapshot.scoreRows) : dimensionScores(questions, responses);
 
   return (
     <main className="page-content diagnostic-page">
@@ -73,7 +76,7 @@ export default async function DiagnosticPage({ searchParams }: PageProps) {
         <div className="diagnostic-heading-actions">
           <span className="real-data-badge">
             {isCompleted ? <CheckCircle2 size={16} /> : <ClipboardCheck size={16} />}
-            {isCompleted ? "Completado" : `${responses.length} de ${questions.length}`}
+            {isValidated ? "Validado por Nexaro" : isCompleted ? "Pendiente de validación" : `${responses.length} de ${questions.length}`}
           </span>
           {isCompleted && <Link className="button-primary" href="/app/hoja-de-ruta">Ver hoja de ruta <ArrowRight size={16} /></Link>}
         </div>
@@ -89,10 +92,10 @@ export default async function DiagnosticPage({ searchParams }: PageProps) {
       {isCompleted ? (
         <section className="diagnostic-results" aria-labelledby="diagnostic-result-title">
           <article className="card diagnostic-overall-card">
-            <span className="card-label">Resultado provisional</span>
-            <div className="diagnostic-score">{Math.round(diagnostic.provisional_score ?? 0)}<span>/ 100</span></div>
+            <span className="card-label">{isValidated ? "Resultado validado" : "Resultado provisional"}</span>
+            <div className="diagnostic-score">{diagnostic.provisional_score === null ? "Sin evaluar" : Math.round(diagnostic.provisional_score)}{diagnostic.provisional_score !== null && <span>/ 100</span>}</div>
             <h2 id="diagnostic-result-title">{scoreLabel(diagnostic.provisional_score)}</h2>
-            <p>Calculado a partir de {responses.filter((response) => response.value > 0).length} respuestas aplicables de {responses.length} registradas para {organization.name}.</p>
+            <p>{isValidated ? "Validado y congelado por Nexaro" : "Pendiente de revisión por Nexaro"} a partir de {responses.filter((response) => response.value > 0).length} respuestas aplicables de {responses.length} registradas para {organization.name}.</p>
             <Link className="diagnostic-overall-action" href="/app/hoja-de-ruta">Abrir plan de 90 días <ArrowRight size={16} /></Link>
           </article>
           <article className="card diagnostic-dimensions-result">
@@ -101,8 +104,8 @@ export default async function DiagnosticPage({ searchParams }: PageProps) {
               {scores.map((dimension) => (
                 <div className="dimension-row" key={dimension.key} style={{ "--dimension-color": dimension.color } as CSSProperties}>
                   <div className="dimension-name"><span className="dimension-code">{dimension.code}</span><span>{dimension.name}</span></div>
-                  <div className="bar-track" aria-label={`${dimension.name}: ${Math.round(dimension.score ?? 0)} de 100`}><span style={{ width: `${dimension.score ?? 0}%` }} /></div>
-                  <span className="dimension-score">{Math.round(dimension.score ?? 0)}</span>
+                  <div className="bar-track" aria-label={`${dimension.name}: ${dimension.score === null ? "Sin evaluar" : `${Math.round(dimension.score)} de 100`}`}><span style={{ width: `${dimension.score ?? 0}%` }} /></div>
+                  <span className="dimension-score">{dimension.score === null ? "Sin evaluar" : Math.round(dimension.score)}</span>
                 </div>
               ))}
             </div>

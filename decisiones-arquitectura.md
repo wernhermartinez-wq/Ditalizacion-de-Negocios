@@ -10,7 +10,7 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 
 ## 1. Alcance de usuarios por empresa en el MVP
 
-**Estado:** Decidido — pendiente de implementar.
+**Estado:** Decidido — pospuesto por alcance del MVP.
 
 **Contexto:** la especificación base (`Nexaro_especificacion_base_MVP.md`) define cuatro roles, incluyendo "Cliente colaborador" invitado por el "Cliente propietario", y permite que una persona pertenezca a más de una empresa. El código actual no implementa invitaciones ni selector de empresa (`getCurrentOrganization` siempre devuelve la organización más antigua del usuario).
 
@@ -25,7 +25,7 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 
 ## 2. Nexaro como organización
 
-**Estado:** Decidido — pendiente de implementar.
+**Estado:** Implementado.
 
 **Contexto:** actualmente Nexaro (la empresa que opera la plataforma) no existe como fila en `organizations`; solo existe el concepto de "administrador de plataforma" vía la tabla `platform_admins`, poblada con el email de `wernher.martinez@gmail.com` hardcodeado en una migración SQL versionada en git.
 
@@ -36,11 +36,13 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 - El flujo de diagnóstico, resultado, hoja de ruta, herramientas y tareas debe funcionar para esa organización sin ninguna rama de código especial — es una organización como cualquier otra.
 - No otorga por sí sola ningún permiso especial sobre otras organizaciones (ver punto 3).
 
+**Implementado:** Nexaro existe como organización normal. El alta reproducible se realiza con `npm run bootstrap:admin`, tomando `PLATFORM_ADMIN_EMAIL` del entorno y sin incluir datos personales en migraciones.
+
 ---
 
 ## 3. Rol de administrador de plataforma, independiente de la organización
 
-**Estado:** Decidido — requiere revisión de lo ya implementado antes de dar por cerrado.
+**Estado:** Implementado.
 
 **Contexto:** siguiendo el punto 2, había que decidir si los permisos de "ver y administrar todas las empresas" debían salir de "esta organización es especial" o de un rol de usuario aparte.
 
@@ -50,11 +52,13 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 - La tabla `platform_admins` (o equivalente) sigue siendo el mecanismo correcto conceptualmente; revisar si su implementación actual necesita cambios más allá de dejar de hardcodear el email en una migración versionada (ver hallazgo de seguridad M/Bajo: "Bootstrap de admin con email hardcodeado en migración").
 - Las políticas RLS de tablas "globales" (catálogos, reglas, cuestionarios) deben seguir comprobando el rol de administrador de plataforma, no la pertenencia a una organización concreta.
 
+**Implementado:** `platform_admins` continúa siendo independiente de `organization_memberships`. Se eliminó el correo personal hardcodeado y el bootstrap idempotente asigna por separado la membresía de Nexaro y el rol global.
+
 ---
 
 ## 4. Un solo login, navegación separada por rol
 
-**Estado:** Decidido — pendiente de implementar (revisar si algo ya funciona así).
+**Estado:** Implementado.
 
 **Contexto:** con Nexaro como organización normal y el admin como rol de usuario aparte, había que definir si el acceso a la plataforma debía diferenciarse por tipo de usuario (login distinto, subdominios, sesiones separadas) o no.
 
@@ -66,6 +70,8 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 - No crear un segundo sistema de autenticación ni rutas de login separadas.
 - La UI debe dejar explícito en todo momento en qué contexto está el usuario (viendo su propia empresa vs. viendo el panel global de administración), para evitar que una acción de administrador se confunda con una acción sobre la propia organización.
 - Verificar que `src/lib/supabase/proxy.ts` proteja también `/admin` a nivel de middleware (hallazgo de seguridad B2), no solo mediante el layout de React.
+
+**Implementado:** `/app` y `/admin` comparten el login. El proxy protege ambas áreas y las interfaces identifican de forma explícita el contexto de empresa y el contexto de administración global.
 
 ---
 
@@ -85,7 +91,7 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 
 ## 6. Versionado de puntuación y hoja de ruta
 
-**Estado:** Decidido — pendiente de implementar.
+**Estado:** Implementado.
 
 **Contexto:** hoy `scoreValues()` (`src/lib/diagnostics.ts`) y `buildRoadmap()` (`src/lib/roadmap.ts`) recalculan la puntuación y la hoja de ruta en caliente, en cada carga, a partir del código actual. No existen `assessment_scores`, `roadmaps` ni `roadmap_items` como los define la especificación. Si se cambia una fórmula o una plantilla de recomendación, todos los diagnósticos ya entregados a un cliente cambiarían de interpretación retroactivamente y sin dejar rastro de lo que el cliente vio en su momento — lo que la especificación prohíbe explícitamente.
 
@@ -97,11 +103,13 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 - El snapshot se congela **solo al validarlo un consultor Nexaro** (estado `validated`), no al simplemente enviarlo (`submitted`). Antes de la validación, el resultado mostrado al cliente es explícitamente "provisional" y puede seguir recalculándose; una vez validado, queda inmutable.
 - Esto implica que el flujo de validación por consultor (hoy inexistente en el MVP recortado) es un requisito previo para implementar este punto: no se puede versionar/congelar nada hasta que exista al menos una acción mínima de "consultor Nexaro valida este diagnóstico" que dispare la escritura del snapshot.
 
+**Implementado:** las migraciones `20260903091803_create_diagnostic_validation_snapshots.sql`, `20260903092849_consolidate_diagnostic_update_policy.sql` y `20260903094610_enforce_complete_diagnostic_snapshots.sql` crean snapshots inmutables de puntuación y hoja de ruta. La base exige las seis dimensiones y una hoja de ruta antes de permitir el estado `validated`.
+
 ---
 
 ## 7. Quién valida un diagnóstico
 
-**Estado:** Decidido — pendiente de implementar.
+**Estado:** Implementado.
 
 **Contexto:** el punto 6 depende de que exista un flujo mínimo de validación de diagnósticos, que hoy no existe en el código. Había que decidir quién tiene permiso para ejecutar esa validación.
 
@@ -112,11 +120,13 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 - Se construye desde `/admin`: una vista mínima donde el administrador vea diagnósticos pendientes de validación y pueda validarlos.
 - Si en el futuro se contratan consultores independientes del administrador de plataforma, este punto habrá que revisarlo y separar ambos roles — queda anotado como deuda consciente, no como decisión definitiva para siempre.
 
+**Implementado:** el detalle de empresa en `/admin` muestra los diagnósticos por validar y ofrece la acción de validación únicamente al administrador de plataforma. La operación se realiza de forma atómica mediante `validate_diagnostic_snapshot`.
+
 ---
 
 ## 8. Cabeceras de seguridad HTTP
 
-**Estado:** Implementado parcialmente (4 de 5 cabeceras) — CSP pendiente.
+**Estado:** Implementado.
 
 **Contexto:** `next.config.ts` no definía ninguna cabecera de seguridad, dejando expuesto a clickjacking `/login` y demás páginas de credenciales, y sin defensa en profundidad frente a XSS.
 
@@ -133,11 +143,13 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 - Si Next.js/Tailwind requieren `'unsafe-inline'` en `style-src` (común en apps con CSS-in-JS o estilos inline generados por el framework) o si se puede evitar con nonces.
 - Si el módulo de Visibilidad IA hace alguna llamada `fetch` desde el cliente (no solo desde servidor) que necesite estar en `connect-src`.
 
+**Implementado:** `next.config.ts` añade una CSP restrictiva para la propia aplicación y el origen configurado de Supabase. Se mantienen estilos inline porque la interfaz usa atributos `style`; el módulo de Visibilidad permanece del lado del servidor y no amplía `connect-src`.
+
 ---
 
 ## 9. Rate limiting en login/registro/recuperación de acceso
 
-**Estado:** Decidido — pendiente de implementar (para Codex).
+**Estado:** Implementado.
 
 **Contexto:** `login`, `register` y `recoverAccess` (`src/app/(auth)/actions.ts`) no tienen ningún límite propio de intentos; dependen solo de los límites internos (genéricos, no configurables) de Supabase Auth. Mayor superficie para fuerza bruta/credential stuffing contra `/login`.
 
@@ -149,11 +161,13 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 - Registrar un intento fallido cada vez que `signInWithPassword` devuelva error; limpiar o ignorar intentos con más de 15 minutos de antigüedad (se puede resolver con la propia condición del `count`, sin necesidad de un job de limpieza aparte, aunque conviene un `DELETE` periódico o un `TTL` para no acumular filas indefinidamente).
 - Aplicar el mismo mecanismo a `register` si se quiere evitar creación masiva de cuentas, y a `recoverAccess` para evitar spam de emails de recuperación.
 
+**Implementado:** `auth_attempts` registra intentos fallidos por email, IP y acción. Login, registro y recuperación aplican el umbral de 5 intentos en 15 minutos y devuelven el mismo mensaje genérico. La tabla no es accesible para `anon` ni `authenticated`; las Server Actions usan la clave privada del servidor.
+
 ---
 
 ## 10. Caso límite: dimensión completa en "No aplica" en el diagnóstico
 
-**Estado:** Decidido — pendiente de implementar (para Codex).
+**Estado:** Implementado.
 
 **Contexto:** `src/app/app/diagnostico/actions.ts:59-64` bloquea completar el diagnóstico si todas las respuestas de una dimensión son "No aplica" (valor 0). Esto atasca sin salida a negocios simples (ej. un autónomo sin embudo de ventas formal) que legítimamente no tienen esa dimensión aplicable.
 
@@ -164,6 +178,8 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 - En el cálculo de resultado (`src/lib/diagnostics.ts`, `scoreValues`/`scoreLabel`) confirmar que una dimensión sin respuestas aplicables produce un valor nulo/"Sin evaluar" en vez de un 0 que se interprete como "nivel mínimo" — deben ser conceptos distintos (no aplica ≠ nivel más bajo).
 - En la UI de resultado (`src/app/app/diagnostico/page.tsx`, sección "Resultado por dimensión") renderizar explícitamente "Sin evaluar" para esas dimensiones, no ocultarlas ni mostrarlas con un puntaje falso.
 - Si esto interactúa con el punto 6 (snapshot al validar): el snapshot debe conservar qué dimensiones quedaron "Sin evaluar" en ese momento, no recalcularlo después.
+
+**Implementado:** se permite finalizar con dimensiones totalmente N/A. Se excluyen del promedio y de las acciones de la hoja de ruta, se muestran como `Sin evaluar` y ese estado queda guardado en el snapshot validado.
 
 ---
 
@@ -191,8 +207,8 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 
 ## Puntos pendientes de decisión
 
-Ninguno por ahora. Todos los puntos identificados en el análisis inicial (seguridad + abogado del diablo + fixer) quedaron con una decisión registrada (puntos 1 a 12). Los pendientes de **implementación** por Codex quedan marcados como tal en cada punto: principalmente el 1 (invitaciones, si se retoma), el 2 y 3 (Nexaro como organización + rol admin), el 4 (navegación por rol), el 6 y 7 (versionado + flujo de validación), el 8 (CSP), el 9 (rate limiting) y el 10 (caso "Sin evaluar").
+Ninguno por ahora. Todos los puntos identificados en el análisis inicial (seguridad + abogado del diablo + fixer) quedaron con una decisión registrada (puntos 1 a 12). Los puntos 2, 3, 4, 6, 7, 8, 9 y 10 ya están implementados. El punto 1 continúa pospuesto por decisión de alcance del MVP.
 
 ---
 
-*Última actualización: sesión de análisis y decisiones del 2026-09-03. Documento cerrado como base de decisiones — listo para pasar a Codex como especificación complementaria de implementación. Si surgen nuevos puntos, se añaden como entradas numeradas siguiendo este mismo formato.*
+*Última actualización: implementación y verificación del 2026-09-03. Si surgen nuevos puntos, se añaden como entradas numeradas siguiendo este mismo formato.*

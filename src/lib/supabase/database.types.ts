@@ -14,6 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      auth_attempts: {
+        Row: {
+          action: string
+          created_at: string
+          email: string
+          id: number
+          ip: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          email: string
+          id?: never
+          ip: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          email?: string
+          id?: never
+          ip?: string
+        }
+        Relationships: []
+      }
+      assessment_scores: {
+        Row: {
+          assessment_id: string
+          created_at: string
+          dimension_id: string
+          formula_version: string
+          id: string
+          nivel: string
+          score: number | null
+          tipo_resultado: string
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          dimension_id: string
+          formula_version: string
+          id?: string
+          nivel: string
+          score?: number | null
+          tipo_resultado: string
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          dimension_id?: string
+          formula_version?: string
+          id?: string
+          nivel?: string
+          score?: number | null
+          tipo_resultado?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_scores_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_profiles: {
         Row: {
           address_line_1: string
@@ -272,6 +337,8 @@ export type Database = {
           started_by: string
           status: string
           updated_at: string
+          validated_at: string | null
+          validated_by: string | null
         }
         Insert: {
           completed_at?: string | null
@@ -283,6 +350,8 @@ export type Database = {
           started_by: string
           status?: string
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
         }
         Update: {
           completed_at?: string | null
@@ -294,6 +363,8 @@ export type Database = {
           started_by?: string
           status?: string
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
         }
         Relationships: [
           {
@@ -552,6 +623,74 @@ export type Database = {
         }
         Relationships: []
       }
+      roadmap_items: {
+        Row: {
+          actions: Json
+          code: string
+          color: string
+          created_at: string
+          dimension_id: string
+          dimension_name: string
+          id: string
+          objective: string
+          period: string
+          phase: number
+          position: number
+          priority: string
+          roadmap_id: string
+          score: number
+          success: string
+          title: string
+          weaknesses: Json
+        }
+        Insert: {
+          actions: Json
+          code: string
+          color: string
+          created_at?: string
+          dimension_id: string
+          dimension_name: string
+          id?: string
+          objective: string
+          period: string
+          phase: number
+          position: number
+          priority: string
+          roadmap_id: string
+          score: number
+          success: string
+          title: string
+          weaknesses: Json
+        }
+        Update: {
+          actions?: Json
+          code?: string
+          color?: string
+          created_at?: string
+          dimension_id?: string
+          dimension_name?: string
+          id?: string
+          objective?: string
+          period?: string
+          phase?: number
+          position?: number
+          priority?: string
+          roadmap_id?: string
+          score?: number
+          success?: string
+          title?: string
+          weaknesses?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_items_roadmap_id_fkey"
+            columns: ["roadmap_id"]
+            isOneToOne: false
+            referencedRelation: "roadmaps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roadmap_task_completions: {
         Row: {
           completed_at: string
@@ -590,6 +729,48 @@ export type Database = {
           },
           {
             foreignKeyName: "roadmap_task_completions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmaps: {
+        Row: {
+          assessment_id: string
+          formula_version: string
+          id: string
+          organization_id: string
+          validated_at: string
+          validated_by: string
+        }
+        Insert: {
+          assessment_id: string
+          formula_version: string
+          id?: string
+          organization_id: string
+          validated_at?: string
+          validated_by: string
+        }
+        Update: {
+          assessment_id?: string
+          formula_version?: string
+          id?: string
+          organization_id?: string
+          validated_at?: string
+          validated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmaps_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: true
+            referencedRelation: "diagnostics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmaps_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1265,6 +1446,15 @@ export type Database = {
           p_email: string
         }
         Returns: string
+      }
+      validate_diagnostic_snapshot: {
+        Args: {
+          p_diagnostic_id: string
+          p_formula_version: string
+          p_roadmap: Json
+          p_scores: Json
+        }
+        Returns: undefined
       }
     }
     Enums: {
