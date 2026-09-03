@@ -7,7 +7,7 @@ import {
   BookOpen, Building2, ChartNoAxesCombined, CheckSquare2, ChevronDown,
   ClipboardCheck, FolderKanban, LayoutDashboard, LogOut, Menu, Route,
   Settings2, UserRound, Wrench, X,
-  ShieldCheck,
+  ShieldCheck, ScanSearch,
 } from "lucide-react";
 import { logout } from "@/app/app/actions";
 import { BrandLogo } from "@/components/brand-logo";
@@ -18,6 +18,7 @@ const navItems = [
   { href: "/app/configuracion", label: "Mi perfil", icon: UserRound },
   { href: "/app/diagnostico", label: "Diagnóstico", icon: ClipboardCheck },
   { href: "/app/evolucion", label: "Evolución", icon: ChartNoAxesCombined },
+  { href: "/app/visibilidad", label: "Visibilidad SEO e IA", icon: ScanSearch },
   { href: "/app/herramientas", label: "Herramientas", icon: Wrench },
   { href: "/app/hoja-de-ruta", label: "Hoja de ruta", icon: Route },
   { href: "/app/tareas", label: "Tareas", icon: CheckSquare2 },

@@ -2,13 +2,13 @@ import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Building2, CalendarDays, CheckCircle2, ClipboardList, Globe2, Mail, RotateCcw, UserRound } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, CheckCircle2, ClipboardList, Globe2, Mail, RotateCcw, ScanSearch, UserRound } from "lucide-react";
 import { AuthMessage } from "@/components/auth/message";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { buildRoadmap, roadmapTasks } from "@/lib/roadmap";
 import { createClient } from "@/lib/supabase/server";
 import { workCategories, workCategoryLabel } from "@/lib/work";
-import { addWorkEntry, completeRoadmapTask, reopenRoadmapTask } from "./actions";
+import { addWorkEntry, completeNexaroTask, completeRoadmapTask, reopenNexaroTask, reopenRoadmapTask } from "./actions";
 
 export const metadata: Metadata = { title: "Empresa · Control Nexaro" };
 
@@ -28,7 +28,7 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
   if (organizationError || !organization) notFound();
 
   const { data: activeQuestionnaire } = await supabase.from("diagnostic_questionnaires").select("id").eq("is_active", true).single();
-  const [membershipsResult, usersResult, profilesResult, diagnosticsResult, workResult, questionsResult] = await Promise.all([
+  const [membershipsResult, usersResult, profilesResult, diagnosticsResult, workResult, questionsResult, nexaroTasksResult] = await Promise.all([
     supabase.from("organization_memberships").select("*").eq("organization_id", organizationId),
     supabase.from("platform_users").select("*"),
     supabase.from("profiles").select("*"),
@@ -39,8 +39,9 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
     activeQuestionnaire
       ? supabase.from("diagnostic_questions").select("*").eq("questionnaire_id", activeQuestionnaire.id).order("position")
       : Promise.resolve({ data: [], error: null }),
+    supabase.from("nexaro_tasks").select("*").eq("organization_id", organizationId).order("created_at", { ascending: false }),
   ]);
-  if ([membershipsResult, usersResult, profilesResult, diagnosticsResult, workResult, questionsResult].some((result) => result.error)) {
+  if ([membershipsResult, usersResult, profilesResult, diagnosticsResult, workResult, questionsResult, nexaroTasksResult].some((result) => result.error)) {
     throw new Error("No se pudo cargar el expediente de la empresa.");
   }
 
@@ -63,6 +64,9 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
   const profiles = profilesResult.data ?? [];
   const memberships = membershipsResult.data ?? [];
   const workEntries = workResult.data ?? [];
+  const nexaroTasks = nexaroTasksResult.data ?? [];
+  const pendingNexaroTasks = nexaroTasks.filter((task) => task.status !== "completed" && task.status !== "cancelled");
+  const completedNexaroTasks = nexaroTasks.filter((task) => task.status === "completed");
   const addWorkEntryForCompany = addWorkEntry.bind(null, organization.id);
 
   return (
@@ -80,7 +84,7 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
       <section className="admin-company-facts">
         <article><Building2 size={18} /><span><small>Empresa</small><strong>{organization.legal_name ?? organization.name}</strong></span></article>
         <article><Globe2 size={18} /><span><small>Sitio web</small><strong>{organization.website ? <a href={organization.website} target="_blank" rel="noreferrer">Abrir sitio</a> : "No registrado"}</strong></span></article>
-        <article><ClipboardList size={18} /><span><small>Tareas pendientes</small><strong>{diagnostic?.status === "completed" ? tasks.length : "Pendientes del diagnóstico"}</strong></span></article>
+        <article><ClipboardList size={18} /><span><small>Tareas pendientes</small><strong>{pendingNexaroTasks.length + tasks.length}</strong></span></article>
         <article><CheckCircle2 size={18} /><span><small>Trabajos Nexaro</small><strong>{workEntries.length}</strong></span></article>
       </section>
 
@@ -106,6 +110,13 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
           </section>
 
           <section className="admin-panel">
+            <div className="admin-section-title"><div><p>Operación</p><h2>Tareas asignadas por Nexaro</h2></div><span>{pendingNexaroTasks.length} acciones</span></div>
+            {pendingNexaroTasks.length ? <div className="admin-pending-tasks">{pendingNexaroTasks.map((task) => (
+              <article key={task.id}><i style={{ background: task.source === "visibility" ? "var(--accent)" : "var(--ink-600)" }} /><div><strong>{task.title}</strong><small>{task.source === "visibility" ? "Visibilidad SEO e IA" : "Seguimiento Nexaro"} · Prioridad {task.priority}</small>{task.description && <p>{task.description}</p>}</div><form action={completeNexaroTask.bind(null, organization.id, task.id)}><button type="submit"><CheckCircle2 size={15} /> Marcar realizada</button></form></article>
+            ))}</div> : <div className="admin-empty compact"><ClipboardList size={22} /><strong>No hay tareas operativas pendientes.</strong><span>Las recomendaciones convertidas en tarea aparecerán aquí.</span></div>}
+          </section>
+
+          <section className="admin-panel">
             <div className="admin-section-title"><div><p>Hoja de ruta</p><h2>Tareas pendientes sugeridas</h2></div><span>{tasks.length} acciones</span></div>
             {tasks.length && diagnostic ? <div className="admin-pending-tasks">{tasks.map((task) => (
               <article key={task.id} style={{ "--task-color": task.color } as CSSProperties}><i /><div><strong>{task.title}</strong><small>{task.code} · {task.dimension} · {task.period}</small></div><form action={completeRoadmapTask.bind(null, organization.id, diagnostic.id, task.id)}><button type="submit"><CheckCircle2 size={15} /> Marcar realizada</button></form></article>
@@ -113,15 +124,24 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
           </section>
 
           <section className="admin-panel">
-            <div className="admin-section-title"><div><p>Seguimiento</p><h2>Tareas realizadas y comprobadas</h2></div><span>{completions.length} acciones</span></div>
+            <div className="admin-section-title"><div><p>Seguimiento</p><h2>Tareas realizadas y comprobadas</h2></div><span>{completions.length + completedNexaroTasks.length} acciones</span></div>
+            {completedNexaroTasks.length > 0 && <div className="admin-completed-tasks">{completedNexaroTasks.map((task) => (
+              <article key={task.id}><CheckCircle2 size={17} /><div><strong>{task.title}</strong><small>{task.source === "visibility" ? "Visibilidad SEO e IA" : "Seguimiento Nexaro"} · Realizada el {task.completed_at ? formatDate(task.completed_at) : "—"}</small></div><form action={reopenNexaroTask.bind(null, organization.id, task.id)}><button type="submit"><RotateCcw size={14} /> Volver a pendientes</button></form></article>
+            ))}</div>}
             {completions.length && diagnostic ? <div className="admin-completed-tasks">{completions.map((completion) => {
               const task = taskByKey.get(completion.task_key);
               return <article key={completion.id}><CheckCircle2 size={17} /><div><strong>{completion.title}</strong><small>{task ? `${task.code} · ${task.dimension} · ` : ""}Realizada el {formatDate(completion.completed_at)}</small></div><form action={reopenRoadmapTask.bind(null, organization.id, diagnostic.id, completion.task_key)}><button type="submit"><RotateCcw size={14} /> Volver a pendientes</button></form></article>;
-            })}</div> : <div className="admin-empty compact"><CheckCircle2 size={22} /><strong>Aún no hay tareas realizadas.</strong><span>Marca una acción cuando Nexaro la haya ejecutado y comprobado.</span></div>}
+            })}</div> : null}
+            {!completions.length && !completedNexaroTasks.length && <div className="admin-empty compact"><CheckCircle2 size={22} /><strong>Aún no hay tareas realizadas.</strong><span>Marca una acción cuando Nexaro la haya ejecutado y comprobado.</span></div>}
           </section>
         </div>
 
         <aside className="admin-company-secondary">
+          <section className="admin-panel admin-visibility-entry">
+            <div className="admin-section-title"><div><p>SEO e IA</p><h2>Visibilidad de la empresa</h2></div><ScanSearch size={19} /></div>
+            <p>Configura preguntas, competidores y proveedores; después ejecuta y revisa sus evidencias.</p>
+            <Link href={`/admin/empresas/${organization.id}/visibilidad`}>Abrir control de visibilidad <ArrowLeft size={15} /></Link>
+          </section>
           <section className="admin-panel">
             <div className="admin-section-title"><div><p>Personas</p><h2>Usuarios vinculados</h2></div><span>{memberships.length}</span></div>
             <div className="admin-member-list">{memberships.map((membership) => {

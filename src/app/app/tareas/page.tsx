@@ -22,6 +22,12 @@ export default async function TasksPage({ searchParams }: PageProps) {
   const organization = await getCurrentOrganization(supabase, userId);
   if (!organization) redirect("/app/perfil?bienvenida=1");
 
+  const nexaroTasksResult = await supabase.from("nexaro_tasks").select("*").eq("organization_id", organization.id).order("created_at", { ascending: false });
+  if (nexaroTasksResult.error) throw new Error("No se pudieron cargar las tareas operativas.");
+  const allNexaroTasks = nexaroTasksResult.data ?? [];
+  const nexaroTasks = allNexaroTasks.filter((task) => task.status !== "completed" && task.status !== "cancelled");
+  const completedNexaroTasks = allNexaroTasks.filter((task) => task.status === "completed");
+
   const { data: questionnaire, error: questionnaireError } = await supabase
     .from("diagnostic_questionnaires")
     .select("id")
@@ -42,14 +48,22 @@ export default async function TasksPage({ searchParams }: PageProps) {
 
   if (!diagnostic) {
     return (
-      <main className="page-content roadmap-page roadmap-empty">
+      <main className="page-content tasks-page">
         <section className="state-card">
           <span className="state-visual"><ListChecks size={24} /></span>
           <p className="eyebrow">Próximas tareas</p>
           <h1>Las tareas nacen del diagnóstico.</h1>
-          <p>Finaliza la evaluación para generar acciones priorizadas desde las brechas reales de la empresa.</p>
+          <p>{nexaroTasks.length ? `Nexaro ya ha asignado ${nexaroTasks.length} tarea(s) operativas. El diagnóstico añadirá la hoja de ruta completa.` : "Finaliza la evaluación para generar acciones priorizadas desde las brechas reales de la empresa."}</p>
           <Link className="button-primary" href="/app/diagnostico">Ir al diagnóstico <ArrowRight size={16} /></Link>
         </section>
+        {nexaroTasks.length > 0 && <section className="card completed-tasks-card nexaro-assigned-tasks">
+          <header><div><p className="eyebrow">Asignadas por Nexaro</p><h2>Tareas operativas pendientes</h2></div><span>{nexaroTasks.length}</span></header>
+          <div className="completed-task-list">{nexaroTasks.map((task) => <article className="completed-task" key={task.id}><span className="completed-task-icon"><ListChecks size={18} /></span><div><strong>{task.title}</strong><small>{task.source === "visibility" ? "Visibilidad SEO e IA" : "Seguimiento Nexaro"} · Prioridad {task.priority}</small>{task.description && <p>{task.description}</p>}</div></article>)}</div>
+        </section>}
+        {completedNexaroTasks.length > 0 && <section className="card completed-tasks-card">
+          <header><div><p className="eyebrow">Comprobadas por Nexaro</p><h2>Tareas realizadas</h2></div><span>{completedNexaroTasks.length}</span></header>
+          <div className="completed-task-list">{completedNexaroTasks.map((task) => <article className="completed-task" key={task.id}><span className="completed-task-icon"><CheckCircle2 size={18} /></span><div><strong>{task.title}</strong><small>Realizada el {task.completed_at ? new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric" }).format(new Date(task.completed_at)) : "—"}</small></div></article>)}</div>
+        </section>}
       </main>
     );
   }
@@ -81,6 +95,11 @@ export default async function TasksPage({ searchParams }: PageProps) {
 
       <AuthMessage error={params.error} success={params.success} />
 
+      {nexaroTasks.length > 0 && <section className="card completed-tasks-card nexaro-assigned-tasks">
+        <header><div><p className="eyebrow">Asignadas por Nexaro</p><h2>Tareas operativas</h2></div><span>{nexaroTasks.length}</span></header>
+        <div className="completed-task-list">{nexaroTasks.map((task) => <article className="completed-task" key={task.id}><span className="completed-task-icon"><ListChecks size={18} /></span><div><strong>{task.title}</strong><small>{task.source === "visibility" ? "Visibilidad SEO e IA" : "Seguimiento Nexaro"} · Prioridad {task.priority}</small>{task.description && <p>{task.description}</p>}</div></article>)}</div>
+      </section>}
+
       {pendingTasks.length ? <div className="task-plan">
         {[1, 2, 3].map((phase) => {
           const phaseTasks = pendingTasks.filter((task) => task.phase === phase);
@@ -104,9 +123,15 @@ export default async function TasksPage({ searchParams }: PageProps) {
       )}
 
       <section className="card completed-tasks-card" aria-labelledby="completed-tasks-title">
-        <header><div><p className="eyebrow">Historial</p><h2 id="completed-tasks-title">Tareas realizadas</h2></div><span>{completions.length}</span></header>
-        {completions.length ? (
+        <header><div><p className="eyebrow">Historial</p><h2 id="completed-tasks-title">Tareas realizadas</h2></div><span>{completions.length + completedNexaroTasks.length}</span></header>
+        {completions.length || completedNexaroTasks.length ? (
           <div className="completed-task-list">
+            {completedNexaroTasks.map((task) => (
+              <article className="completed-task" key={task.id}>
+                <span className="completed-task-icon"><CheckCircle2 size={18} /></span>
+                <div><strong>{task.title}</strong><small>{task.source === "visibility" ? "Visibilidad SEO e IA" : "Seguimiento Nexaro"} · Realizada el {task.completed_at ? completedDate(task.completed_at) : "—"}</small></div>
+              </article>
+            ))}
             {completions.map((completion) => {
               const task = taskByKey.get(completion.task_key);
               return (

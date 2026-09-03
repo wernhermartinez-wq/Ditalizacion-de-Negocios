@@ -129,3 +129,44 @@ export async function reopenRoadmapTask(organizationId: string, diagnosticId: st
   revalidatePath("/app/tareas");
   message(organizationId, "success", "Tarea devuelta a pendientes.");
 }
+
+async function updateNexaroTask(organizationId: string, taskId: string, completed: boolean) {
+  if (!/^[0-9a-f-]{36}$/i.test(organizationId) || !/^[0-9a-f-]{36}$/i.test(taskId)) redirect("/admin");
+  const supabase = await createClient();
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const userId = typeof claimsData?.claims?.sub === "string" ? claimsData.claims.sub : null;
+  if (claimsError || !userId) redirect("/login");
+  if (!(await isPlatformAdmin(supabase, userId))) redirect("/app");
+
+  const { data: task, error: taskError } = await supabase
+    .from("nexaro_tasks")
+    .select("id")
+    .eq("id", taskId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+  if (taskError || !task) message(organizationId, "error", "No se pudo validar la tarea operativa.");
+
+  const { error } = await supabase
+    .from("nexaro_tasks")
+    .update(completed
+      ? { status: "completed", completed_at: new Date().toISOString(), completed_by: userId }
+      : { status: "pending", completed_at: null, completed_by: null })
+    .eq("id", task.id)
+    .eq("organization_id", organizationId);
+  if (error) message(organizationId, "error", completed ? "No se pudo marcar la tarea como realizada." : "No se pudo devolver la tarea a pendientes.");
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/empresas/${organizationId}`);
+  revalidatePath(`/admin/empresas/${organizationId}/visibilidad`);
+  revalidatePath("/app");
+  revalidatePath("/app/tareas");
+  message(organizationId, "success", completed ? "Tarea operativa realizada y comprobada por Nexaro." : "Tarea operativa devuelta a pendientes.");
+}
+
+export async function completeNexaroTask(organizationId: string, taskId: string) {
+  return updateNexaroTask(organizationId, taskId, true);
+}
+
+export async function reopenNexaroTask(organizationId: string, taskId: string) {
+  return updateNexaroTask(organizationId, taskId, false);
+}
