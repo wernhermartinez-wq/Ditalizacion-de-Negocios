@@ -478,6 +478,7 @@
 .activity-avatar, .honest-empty-icon, .state-visual { color: var(--accent-strong); }
 .tool-item, .diagnostic-scale-key > div, .diagnostic-scale label > span { border-color: var(--line); background: #fffaf3; }
 .card, .state-card, .secondary-action, .company-form .field input, .company-form .field select { background: var(--surface); }
+.card.level-card, .card.diagnostic-overall-card { color: var(--ivory); border-color: var(--ink-950); background: var(--ink-950); }
 .company-form .field input[readonly] { background: #eee5d9; }
 .next-step-card, .task-phase > header, .client-work-log > header { background: #faf4ea; }
 .next-step-marker { background: var(--surface); }
