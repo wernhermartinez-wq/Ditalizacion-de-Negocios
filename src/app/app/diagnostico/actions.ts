@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { isQuestionVisible, scoreValues } from "@/lib/diagnostics";
+import {
+  channelAttributionJson,
+  isQuestionVisible,
+  normalizeChannelAttributionDetails,
+  scoreChannelAttribution,
+  scoreValues,
+} from "@/lib/diagnostics";
 import { getCurrentOrganization } from "@/lib/organizations";
 import { createClient } from "@/lib/supabase/server";
 
@@ -69,7 +75,7 @@ export async function saveDiagnostic(formData: FormData) {
 
   const { data: questions, error: questionsError } = await supabase
     .from("diagnostic_questions")
-    .select("id, required, dimension, dependency_mode")
+    .select("id, required, dimension, dependency_mode, response_type")
     .eq("questionnaire_id", questionnaire.id)
     .order("position");
   if (questionsError || !questions?.length) diagnosticMessage("error", "No se pudieron validar las preguntas.");
@@ -81,9 +87,21 @@ export async function saveDiagnostic(formData: FormData) {
   if (dependenciesError) diagnosticMessage("error", "No se pudieron validar las preguntas condicionales.");
 
   const submittedAnswers = questions.flatMap((question) => {
+    if (question.response_type === "channel_attribution") {
+      const details = normalizeChannelAttributionDetails({
+        usedChannels: formData.getAll(`channels_used_${question.id}`),
+        provenChannels: formData.getAll(`channels_proven_${question.id}`),
+        tracksPerformance: formData.get(`channels_measured_${question.id}`) === "true",
+        unknownChannels: formData.get(`channels_unknown_${question.id}`) === "true",
+      });
+      const value = scoreChannelAttribution(details);
+      if (value === null) return [];
+      return [{ questionId: question.id, dimension: question.dimension, value, details: channelAttributionJson(details) }];
+    }
+
     const rawValue = formData.get(`question_${question.id}`);
     if (typeof rawValue !== "string" || !/^[0-5]$/.test(rawValue)) return [];
-    return [{ questionId: question.id, dimension: question.dimension, value: Number(rawValue) }];
+    return [{ questionId: question.id, dimension: question.dimension, value: Number(rawValue), details: {} }];
   });
   const submittedMap = new Map(submittedAnswers.map((answer) => [answer.questionId, answer.value]));
   const visibleQuestions = questions.filter((question) => isQuestionVisible(question, dependencies ?? [], submittedMap));
@@ -135,6 +153,7 @@ export async function saveDiagnostic(formData: FormData) {
         diagnostic_id: diagnostic.id,
         question_id: answer.questionId,
         value: answer.value,
+        details: answer.details,
         answered_by: userId,
       })),
     );
@@ -145,7 +164,7 @@ export async function saveDiagnostic(formData: FormData) {
     changedAnswers.map((answer) =>
       supabase
         .from("diagnostic_responses")
-        .update({ value: answer.value, answered_by: userId, updated_at: new Date().toISOString() })
+        .update({ value: answer.value, details: answer.details, answered_by: userId, updated_at: new Date().toISOString() })
         .eq("diagnostic_id", diagnostic.id)
         .eq("question_id", answer.questionId),
     ),
@@ -156,7 +175,7 @@ export async function saveDiagnostic(formData: FormData) {
   if (hiddenExistingIds.length) {
     const { error } = await supabase
       .from("diagnostic_responses")
-      .update({ value: 0, answered_by: userId, updated_at: new Date().toISOString() })
+      .update({ value: 0, details: {}, answered_by: userId, updated_at: new Date().toISOString() })
       .eq("diagnostic_id", diagnostic.id)
       .in("question_id", hiddenExistingIds);
     if (error) diagnosticMessage("error", "No se pudieron excluir las respuestas que dejaron de aplicar.");

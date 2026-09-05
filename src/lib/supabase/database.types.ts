@@ -424,6 +424,7 @@ export type Database = {
           prompt: string
           questionnaire_id: string
           required: boolean
+          response_type: string
         }
         Insert: {
           dependency_mode?: string
@@ -435,6 +436,7 @@ export type Database = {
           prompt: string
           questionnaire_id: string
           required?: boolean
+          response_type?: string
         }
         Update: {
           dependency_mode?: string
@@ -446,6 +448,7 @@ export type Database = {
           prompt?: string
           questionnaire_id?: string
           required?: boolean
+          response_type?: string
         }
         Relationships: [
           {
@@ -460,6 +463,7 @@ export type Database = {
       diagnostic_responses: {
         Row: {
           answered_by: string
+          details: Json
           diagnostic_id: string
           question_id: string
           updated_at: string
@@ -467,6 +471,7 @@ export type Database = {
         }
         Insert: {
           answered_by: string
+          details?: Json
           diagnostic_id: string
           question_id: string
           updated_at?: string
@@ -474,6 +479,7 @@ export type Database = {
         }
         Update: {
           answered_by?: string
+          details?: Json
           diagnostic_id?: string
           question_id?: string
           updated_at?: string

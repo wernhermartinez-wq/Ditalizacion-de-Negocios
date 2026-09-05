@@ -3,7 +3,7 @@ import { diagnosticDimensions, dimensionScores, scoreLabel, type DiagnosticQuest
 import { buildRoadmap, type RoadmapItem } from "@/lib/roadmap";
 import type { Database, Json, Tables } from "@/lib/supabase/database.types";
 
-export const DIAGNOSTIC_FORMULA_VERSION = "commercial-growth-v3.1";
+export const DIAGNOSTIC_FORMULA_VERSION = "commercial-growth-v3.2";
 
 type AssessmentScore = Tables<"assessment_scores">;
 type RoadmapSnapshotItem = Tables<"roadmap_items">;

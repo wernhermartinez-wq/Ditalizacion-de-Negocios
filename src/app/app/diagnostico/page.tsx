@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { ArrowRight, BarChart3, CheckCircle2, ClipboardCheck, Info, PencilLine } from "lucide-react";
 import { DiagnosticQuestionnaire } from "@/components/app/diagnostic-questionnaire";
 import { AuthMessage } from "@/components/auth/message";
-import { dimensionScores, scoreLabel } from "@/lib/diagnostics";
+import { dimensionScores, readChannelAttributionDetails, scoreLabel } from "@/lib/diagnostics";
 import { dimensionsFromSnapshot, loadDiagnosticSnapshot } from "@/lib/diagnostic-snapshots";
 import { getCurrentOrganization } from "@/lib/organizations";
 import { createClient } from "@/lib/supabase/server";
@@ -126,6 +126,9 @@ export default async function DiagnosticPage({ searchParams }: PageProps) {
           questions={questions}
           dependencies={dependenciesResult.data ?? []}
           initialAnswers={Object.fromEntries(responseByQuestion)}
+          initialDetails={Object.fromEntries(
+            responses.map((response) => [response.question_id, readChannelAttributionDetails(response.details)]),
+          )}
         />
       )}
     </main>

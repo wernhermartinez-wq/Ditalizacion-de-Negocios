@@ -231,6 +231,37 @@
 .diagnostic-scale input:focus-visible + span { outline: 3px solid rgb(24 166 166 / 0.3); outline-offset: 2px; }
 .diagnostic-scale b { font: 700 0.7rem/1.25 var(--font-body); }
 .diagnostic-scale small { font-size: 0.65rem; }
+.channel-attribution { display: grid; grid-template-columns: minmax(0, 1fr) minmax(11rem, 0.25fr); gap: 0.8rem; }
+.channel-step { padding: 0.9rem; display: grid; gap: 0.75rem; border: 1px solid var(--line); border-radius: 0.7rem; background: #fffaf3; }
+.channel-step + .channel-step { grid-column: 1; }
+.channel-step-heading { display: flex; gap: 0.6rem; align-items: center; }
+.channel-step-heading > b { width: 1.45rem; height: 1.45rem; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; color: white; background: var(--dimension-color); font: 700 0.67rem var(--font-data); }
+.channel-step-heading > span { display: grid; gap: 0.12rem; }
+.channel-step-heading strong { font-size: 0.78rem; }
+.channel-step-heading small { color: var(--ink-600); font-size: 0.68rem; }
+.channel-actions { display: flex; flex-wrap: wrap; gap: 0.55rem; align-items: center; }
+.channel-actions button { min-height: 2rem; padding: 0.38rem 0.65rem; border: 1px solid var(--dimension-color); border-radius: 0.45rem; color: var(--ink-800); background: color-mix(in srgb, var(--dimension-color) 8%, white); font: 650 0.68rem var(--font-body); cursor: pointer; }
+.channel-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.42rem; }
+.channel-grid label, .channel-unknown, .channel-measurement { position: relative; cursor: pointer; }
+.channel-grid input, .channel-unknown input, .channel-measurement input { position: absolute; opacity: 0; pointer-events: none; }
+.channel-grid label > span, .channel-unknown > span { min-height: 2.35rem; padding: 0.48rem 0.58rem 0.48rem 1.75rem; display: flex; align-items: center; border: 1px solid var(--line); border-radius: 0.48rem; color: var(--ink-600); background: white; font-size: 0.68rem; line-height: 1.3; }
+.channel-grid label > span::before, .channel-unknown > span::before, .channel-measurement > span::before { content: ""; position: absolute; left: 0.6rem; width: 0.7rem; height: 0.7rem; border: 1px solid #a99d8d; border-radius: 0.2rem; background: white; }
+.channel-grid input:checked + span, .channel-unknown input:checked + span { color: var(--ink-950); border-color: var(--dimension-color); background: color-mix(in srgb, var(--dimension-color) 10%, white); }
+.channel-grid input:checked + span::before, .channel-unknown input:checked + span::before, .channel-measurement input:checked + span::before { border-color: var(--dimension-color); background: var(--dimension-color); box-shadow: inset 0 0 0 2px white; }
+.channel-grid input:disabled + span { opacity: 0.48; cursor: not-allowed; }
+.channel-grid input:focus-visible + span, .channel-unknown input:focus-visible + span, .channel-measurement input:focus-visible + span { outline: 3px solid rgb(211 90 61 / 0.28); outline-offset: 2px; }
+.channel-unknown { display: inline-flex; }
+.channel-unknown > span { min-height: 2rem; }
+.channel-grid-proven label > span { background: #fbfdfc; }
+.channel-measurement > span { min-height: 3.1rem; padding: 0.65rem 0.7rem 0.65rem 2rem; display: grid; gap: 0.15rem; align-content: center; border: 1px dashed color-mix(in srgb, var(--dimension-color) 65%, var(--line)); border-radius: 0.55rem; background: color-mix(in srgb, var(--dimension-color) 6%, white); }
+.channel-measurement > span::before { left: 0.75rem; }
+.channel-measurement strong { font-size: 0.7rem; line-height: 1.35; }
+.channel-measurement small { color: var(--ink-600); font-size: 0.64rem; line-height: 1.35; }
+.channel-score { grid-column: 2; grid-row: 1 / span 2; align-self: start; position: sticky; top: 1rem; padding: 0.85rem; display: grid; gap: 0.25rem; border: 1px solid color-mix(in srgb, var(--dimension-color) 55%, var(--line)); border-radius: 0.7rem; background: color-mix(in srgb, var(--dimension-color) 9%, white); }
+.channel-score span { color: var(--ink-600); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.channel-score strong { font: 700 1rem var(--font-display); }
+.channel-score small { color: var(--ink-600); font-size: 0.67rem; line-height: 1.4; }
+.channel-score.is-pending { border-color: var(--line); background: #fffaf3; }
 .diagnostic-footer { position: sticky; bottom: 0.75rem; z-index: 10; display: flex; justify-content: space-between; gap: 1rem; align-items: center; box-shadow: 0 8px 32px rgb(16 38 47 / 0.14); }
 .diagnostic-footer p { max-width: 38rem; margin: 0; color: var(--ink-600); font-size: 0.74rem; line-height: 1.45; }
 .diagnostic-actions { display: flex; gap: 0.65rem; flex: 0 0 auto; }
@@ -408,6 +439,10 @@
   .diagnostic-scale-key { grid-template-columns: 1fr 1fr; }
   .diagnostic-scale { grid-template-columns: repeat(6, minmax(3.4rem, 1fr)); overflow-x: auto; padding-bottom: 0.2rem; }
   .diagnostic-scale small { font-size: 0.57rem; }
+  .channel-attribution { grid-template-columns: 1fr; }
+  .channel-step + .channel-step, .channel-score { grid-column: 1; }
+  .channel-score { grid-row: auto; position: static; }
+  .channel-grid { grid-template-columns: 1fr 1fr; }
   .diagnostic-actions { flex-direction: column; }
   .roadmap-summary { grid-template-columns: 1fr; }
   .roadmap-summary > div { border-right: 0; border-bottom: 1px solid rgb(255 255 255 / 0.1); }

@@ -9,6 +9,7 @@ const question = (id: string, dimension: string): DiagnosticQuestion => ({
   prompt: `Pregunta de prueba ${id}`,
   position: 1,
   required: true,
+  response_type: "maturity_scale",
   dependency_mode: "all",
   evidence_examples: null,
   guidance: null,
@@ -19,6 +20,7 @@ const response = (questionId: string, value: number): DiagnosticResponse => ({
   question_id: questionId,
   value,
   answered_by: "user",
+  details: {},
   updated_at: "2026-09-03T00:00:00.000Z",
 });
 

@@ -1,4 +1,4 @@
-import type { Tables } from "@/lib/supabase/database.types";
+import type { Json, Tables } from "@/lib/supabase/database.types";
 
 export const diagnosticDimensions = [
   { key: "digital_presence", code: "VIS", name: "Presencia y descubrimiento", color: "#d35a3d" },
@@ -26,6 +26,102 @@ export const maturityScale = [
   { value: 4, label: "Siempre y revisado", short: "Siempre y revisado", description: "Se hace siempre y alguien comprueba que funcione." },
   { value: 5, label: "Medimos y mejoramos", short: "Medimos y mejoramos", description: "Revisamos el resultado y hacemos cambios para mejorarlo." },
 ] as const;
+
+export const acquisitionChannels = [
+  { value: "google_maps", label: "Google y Google Maps" },
+  { value: "website", label: "Web y formularios" },
+  { value: "seo", label: "SEO / búsquedas orgánicas" },
+  { value: "instagram", label: "Instagram" },
+  { value: "facebook", label: "Facebook" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "paid_ads", label: "Publicidad de pago" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "email", label: "Correo electrónico" },
+  { value: "marketplaces", label: "Marketplaces o directorios" },
+  { value: "referrals", label: "Recomendaciones" },
+  { value: "partnerships", label: "Colaboraciones" },
+  { value: "other", label: "Otro canal" },
+] as const;
+
+export type ChannelAttributionDetails = {
+  usedChannels: string[];
+  provenChannels: string[];
+  tracksPerformance: boolean;
+  unknownChannels: boolean;
+};
+
+const acquisitionChannelIds = new Set<string>(acquisitionChannels.map((channel) => channel.value));
+
+function validChannelIds(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter((item): item is string => typeof item === "string" && acquisitionChannelIds.has(item)))];
+}
+
+export function normalizeChannelAttributionDetails(input: {
+  usedChannels?: unknown;
+  provenChannels?: unknown;
+  tracksPerformance?: unknown;
+  unknownChannels?: unknown;
+}): ChannelAttributionDetails {
+  const unknownChannels = input.unknownChannels === true;
+  const usedChannels = unknownChannels ? [] : validChannelIds(input.usedChannels);
+  const usedSet = new Set(usedChannels);
+  const provenChannels = unknownChannels
+    ? []
+    : validChannelIds(input.provenChannels).filter((channel) => usedSet.has(channel));
+
+  return {
+    usedChannels,
+    provenChannels,
+    tracksPerformance: !unknownChannels && input.tracksPerformance === true,
+    unknownChannels,
+  };
+}
+
+export function readChannelAttributionDetails(value: Json | null | undefined): ChannelAttributionDetails {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return normalizeChannelAttributionDetails({});
+  }
+
+  return normalizeChannelAttributionDetails({
+    usedChannels: value.used_channels,
+    provenChannels: value.proven_channels,
+    tracksPerformance: value.tracks_performance === true,
+    unknownChannels: value.unknown_channels === true,
+  });
+}
+
+export function channelAttributionJson(details: ChannelAttributionDetails): Json {
+  const normalized = normalizeChannelAttributionDetails(details);
+  return {
+    used_channels: normalized.usedChannels,
+    proven_channels: normalized.provenChannels,
+    tracks_performance: normalized.tracksPerformance,
+    unknown_channels: normalized.unknownChannels,
+  };
+}
+
+export function scoreChannelAttribution(details: ChannelAttributionDetails) {
+  const normalized = normalizeChannelAttributionDetails(details);
+  if (normalized.unknownChannels) return 1;
+  if (!normalized.usedChannels.length) return null;
+  if (!normalized.provenChannels.length) return 2;
+
+  const coverage = normalized.provenChannels.length / normalized.usedChannels.length;
+  if (coverage === 1 && normalized.tracksPerformance) return 5;
+  if (coverage >= 0.5) return 4;
+  return 3;
+}
+
+export function channelAttributionLabel(score: number | null) {
+  if (score === 1) return "Canales sin identificar";
+  if (score === 2) return "Usas canales, pero aún no compruebas resultados";
+  if (score === 3) return "Compruebas resultados en algunos canales";
+  if (score === 4) return "Compruebas resultados en la mayoría";
+  if (score === 5) return "Compruebas, mides y mejoras todos tus canales";
+  return "Selecciona tu situación";
+}
 
 export type DiagnosticQuestion = Tables<"diagnostic_questions">;
 export type DiagnosticResponse = Tables<"diagnostic_responses">;
