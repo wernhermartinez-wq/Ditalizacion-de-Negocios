@@ -10,6 +10,47 @@ function diagnosticMessage(type: "error" | "success", text: string): never {
   redirect(`/app/diagnostico?${new URLSearchParams({ [type]: text }).toString()}`);
 }
 
+export async function reopenDiagnostic() {
+  const supabase = await createClient();
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const userId = typeof claimsData?.claims?.sub === "string" ? claimsData.claims.sub : null;
+  if (claimsError || !userId) redirect("/login");
+
+  const organization = await getCurrentOrganization(supabase, userId);
+  if (!organization) redirect("/app/perfil?bienvenida=1");
+
+  const { data: questionnaire, error: questionnaireError } = await supabase
+    .from("diagnostic_questionnaires")
+    .select("id")
+    .eq("is_active", true)
+    .single();
+  if (questionnaireError || !questionnaire) diagnosticMessage("error", "No se pudo cargar el cuestionario activo.");
+
+  const { data: diagnostic, error } = await supabase
+    .from("diagnostics")
+    .update({
+      status: "draft",
+      provisional_score: null,
+      completed_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("organization_id", organization.id)
+    .eq("questionnaire_id", questionnaire.id)
+    .eq("status", "completed")
+    .select("id")
+    .maybeSingle();
+
+  if (error || !diagnostic) {
+    diagnosticMessage("error", "El diagnóstico ya no está pendiente de validación y no puede corregirse.");
+  }
+
+  revalidatePath("/app");
+  revalidatePath("/app/diagnostico");
+  revalidatePath("/app/hoja-de-ruta");
+  revalidatePath("/app/tareas");
+  diagnosticMessage("success", "Diagnóstico abierto para corrección. Tus respuestas anteriores se han conservado.");
+}
+
 export async function saveDiagnostic(formData: FormData) {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();

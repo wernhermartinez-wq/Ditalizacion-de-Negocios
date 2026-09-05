@@ -2,13 +2,14 @@ import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, BarChart3, CheckCircle2, ClipboardCheck, Info } from "lucide-react";
+import { ArrowRight, BarChart3, CheckCircle2, ClipboardCheck, Info, PencilLine } from "lucide-react";
 import { DiagnosticQuestionnaire } from "@/components/app/diagnostic-questionnaire";
 import { AuthMessage } from "@/components/auth/message";
 import { dimensionScores, scoreLabel } from "@/lib/diagnostics";
 import { dimensionsFromSnapshot, loadDiagnosticSnapshot } from "@/lib/diagnostic-snapshots";
 import { getCurrentOrganization } from "@/lib/organizations";
 import { createClient } from "@/lib/supabase/server";
+import { reopenDiagnostic } from "./actions";
 
 export const metadata: Metadata = { title: "Diagnóstico" };
 
@@ -78,6 +79,11 @@ export default async function DiagnosticPage({ searchParams }: PageProps) {
             {isCompleted ? <CheckCircle2 size={16} /> : <ClipboardCheck size={16} />}
             {isValidated ? "Validado por Nexaro" : isCompleted ? "Pendiente de validación" : `${responses.length} de ${questions.length}`}
           </span>
+          {diagnostic?.status === "completed" && (
+            <form action={reopenDiagnostic}>
+              <button className="secondary-action" type="submit"><PencilLine size={16} /> Corregir diagnóstico</button>
+            </form>
+          )}
           {isCompleted && <Link className="button-primary" href="/app/hoja-de-ruta">Ver hoja de ruta <ArrowRight size={16} /></Link>}
         </div>
       </div>
