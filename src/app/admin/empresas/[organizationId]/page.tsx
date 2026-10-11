@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Building2, CalendarDays, CheckCircle2, ClipboardList, Globe2, Mail, RotateCcw, ScanSearch, UserRound } from "lucide-react";
 import { AuthMessage } from "@/components/auth/message";
 import { SubmitButton } from "@/components/auth/submit-button";
+import { RoadmapSelectionForm } from "@/components/admin/roadmap-selection-form";
 import { dimensionScores } from "@/lib/diagnostics";
 import { loadDiagnosticSnapshot, roadmapFromSnapshot } from "@/lib/diagnostic-snapshots";
 import { roadmapTasks } from "@/lib/roadmap";
@@ -108,7 +109,7 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
           <section className="admin-panel admin-plan-catalog">
             <div className="admin-section-title"><div><p>Checklist Nexaro</p><h2>Añadir los siguientes pasos</h2></div><span>{unassignedRestaurantSteps.length} disponibles</span></div>
             <p className="admin-plan-intro">Selecciona sólo las acciones que correspondan a la situación real de {organization.name}. Al guardarlas aparecerán en su recorrido.</p>
-            {unassignedRestaurantSteps.length ? <form action={assignRestaurantRoadmapSteps.bind(null, organization.id)}>
+            {unassignedRestaurantSteps.length ? <RoadmapSelectionForm action={assignRestaurantRoadmapSteps.bind(null, organization.id)}>
               <div className="admin-plan-checklist">{restaurantRoadmapStages.map((stage) => {
                 const availableSteps = unassignedRestaurantSteps.filter((step) => step.stage === stage.stage);
                 if (!availableSteps.length) return null;
@@ -117,8 +118,7 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
                   <div>{availableSteps.map((step) => <label key={step.key}><input type="checkbox" name="stepKey" value={step.key} /><span className="admin-plan-checklist-detail"><span className="admin-plan-item-title"><b>{step.code}</b><strong>{step.title}</strong></span><p>{step.description}</p><dl><div><dt>Necesitamos del restaurante</dt><dd>{step.restaurantInput}</dd></div><div><dt>Acción de Nexaro</dt><dd>{step.nexaroAction}</dd></div><div><dt>Comprobación</dt><dd>{step.evidence}</dd></div></dl></span></label>)}</div>
                 </section>;
               })}</div>
-              <div className="admin-plan-catalog-footer"><small>Puedes añadir uno o varios pasos ahora y sumar otros más adelante.</small><SubmitButton pendingLabel="Añadiendo…">Añadir al recorrido</SubmitButton></div>
-            </form> : <div className="admin-empty compact"><CheckCircle2 size={22} /><strong>Todo el catálogo ya fue revisado.</strong><span>Las acciones activas y realizadas aparecen debajo.</span></div>}
+            </RoadmapSelectionForm> : <div className="admin-empty compact"><CheckCircle2 size={22} /><strong>Todo el catálogo ya fue revisado.</strong><span>Las acciones activas y realizadas aparecen debajo.</span></div>}
           </section>
           <section className="admin-panel admin-restaurant-plan">
             <div className="admin-section-title"><div><p>Plan del restaurante</p><h2>Próximas acciones de Nexaro</h2></div><span>{activeRestaurantSteps.length} pendientes</span></div>

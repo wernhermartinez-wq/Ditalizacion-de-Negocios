@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assignedRestaurantRoadmapSteps, getCurrentRestaurantStep, mergeRestaurantRoadmapTasks, restaurantRoadmapStages, restaurantRoadmapTemplates } from "./restaurant-roadmap";
+import { assignedRestaurantRoadmapSteps, getCurrentRestaurantStep, getRestaurantRoadmapProgress, mergeRestaurantRoadmapTasks, restaurantImplementationStages, restaurantRoadmapStages, restaurantRoadmapTemplates } from "./restaurant-roadmap";
 
 describe("restaurant roadmap", () => {
   it("creates a pending roadmap when there are no stored tasks", () => {
@@ -49,5 +49,32 @@ describe("restaurant roadmap", () => {
     expect(new Set(restaurantRoadmapTemplates.map((step) => step.key)).size).toBe(restaurantRoadmapTemplates.length);
     expect(restaurantRoadmapTemplates.find((step) => step.key === "nfc_table")?.stage).toBe(5);
     expect(restaurantRoadmapTemplates.find((step) => step.key === "nfc_checkout")?.stage).toBe(6);
+  });
+
+  it("uses the six implementation phases as 100 percent and keeps phase seven recurrent", () => {
+    expect(restaurantImplementationStages.map((stage) => stage.stage)).toEqual([1, 2, 3, 4, 5, 6]);
+    const storedTasks = restaurantRoadmapTemplates
+      .filter((template) => template.stage <= 6)
+      .map((template) => ({
+        source_reference: `restaurant:${template.key}`,
+        status: "completed",
+        description: null,
+        due_at: null,
+        completed_at: "2026-10-11T12:00:00.000Z",
+      })) as Parameters<typeof assignedRestaurantRoadmapSteps>[0];
+    const progress = getRestaurantRoadmapProgress(assignedRestaurantRoadmapSteps(storedTasks));
+    expect(progress).toMatchObject({ completedStages: 6, totalStages: 6, percentage: 100, implementationComplete: true });
+  });
+
+  it("does not count an unassigned phase as completed", () => {
+    const oneCompletedTask = [{
+      source_reference: "restaurant:local_baseline",
+      status: "completed",
+      description: null,
+      due_at: null,
+      completed_at: "2026-10-11T12:00:00.000Z",
+    }] as Parameters<typeof assignedRestaurantRoadmapSteps>[0];
+    const progress = getRestaurantRoadmapProgress(assignedRestaurantRoadmapSteps(oneCompletedTask));
+    expect(progress).toMatchObject({ completedStages: 1, percentage: 17, implementationComplete: false });
   });
 });

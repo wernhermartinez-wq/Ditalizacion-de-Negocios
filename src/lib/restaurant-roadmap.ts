@@ -278,7 +278,7 @@ export const restaurantRoadmapTemplates: RestaurantRoadmapTemplate[] = [
     evidence: "Operación completada sin intervención técnica.", owner: "Nexaro", priority: "critical",
   },
   {
-    key: "monthly_data", code: "7A", stage: 7, stageTitle: "Medir y mejorar cada mes", period: "Recurrente",
+    key: "monthly_data", code: "7A", stage: 7, stageTitle: "Búsqueda de mejora permanente", period: "Recurrente",
     title: "Recoger y validar los resultados",
     description: "Consolidamos datos de Google, web, contactos, reservas, Wallet y NFC.",
     restaurantInput: "Aportar los datos operativos que no estén disponibles automáticamente.",
@@ -286,7 +286,7 @@ export const restaurantRoadmapTemplates: RestaurantRoadmapTemplate[] = [
     evidence: "Datos mensuales consolidados y validados.", owner: "Nexaro", priority: "medium",
   },
   {
-    key: "monthly_comparison", code: "7B", stage: 7, stageTitle: "Medir y mejorar cada mes", period: "Recurrente",
+    key: "monthly_comparison", code: "7B", stage: 7, stageTitle: "Búsqueda de mejora permanente", period: "Recurrente",
     title: "Comparar con la fotografía inicial",
     description: "Medimos los cambios frente a la referencia guardada en la fase 1.",
     restaurantInput: "Confirmar hechos del mes que puedan explicar variaciones excepcionales.",
@@ -294,7 +294,7 @@ export const restaurantRoadmapTemplates: RestaurantRoadmapTemplate[] = [
     evidence: "Comparación mensual documentada.", owner: "Nexaro", priority: "medium",
   },
   {
-    key: "monthly_operations", code: "7C", stage: 7, stageTitle: "Medir y mejorar cada mes", period: "Recurrente",
+    key: "monthly_operations", code: "7C", stage: 7, stageTitle: "Búsqueda de mejora permanente", period: "Recurrente",
     title: "Revisar incidencias y trabajos realizados",
     description: "Comprobamos errores, pendientes, acciones completadas y resultados obtenidos.",
     restaurantInput: "Comunicar incidencias observadas por clientes o personal.",
@@ -302,7 +302,7 @@ export const restaurantRoadmapTemplates: RestaurantRoadmapTemplate[] = [
     evidence: "Incidencias y trabajos del periodo revisados.", owner: "Nexaro", priority: "medium",
   },
   {
-    key: "monthly_report", code: "7D", stage: 7, stageTitle: "Medir y mejorar cada mes", period: "Recurrente",
+    key: "monthly_report", code: "7D", stage: 7, stageTitle: "Búsqueda de mejora permanente", period: "Recurrente",
     title: "Entregar el informe mensual",
     description: "Mostramos qué cambió, qué hizo Nexaro y qué necesita atención.",
     restaurantInput: "Revisar el informe y aclarar dudas o prioridades del negocio.",
@@ -310,7 +310,7 @@ export const restaurantRoadmapTemplates: RestaurantRoadmapTemplate[] = [
     evidence: "Informe mensual entregado y revisado.", owner: "Nexaro", priority: "low",
   },
   {
-    key: "monthly_review", code: "7E", stage: 7, stageTitle: "Medir y mejorar cada mes", period: "Recurrente",
+    key: "monthly_review", code: "7E", stage: 7, stageTitle: "Búsqueda de mejora permanente", period: "Recurrente",
     title: "Elegir la siguiente mejora prioritaria",
     description: "Definimos una acción concreta para el siguiente ciclo y actualizamos el recorrido.",
     restaurantInput: "Validar la prioridad según la situación del negocio.",
@@ -326,6 +326,37 @@ export const restaurantRoadmapStages = Array.from(
     period: step.period,
   }])).values(),
 );
+
+export const restaurantImplementationStages = restaurantRoadmapStages.filter((stage) => stage.stage <= 6);
+
+export type RestaurantRoadmapProgress = {
+  completedStages: number;
+  totalStages: number;
+  percentage: number;
+  implementationComplete: boolean;
+  stageStates: Array<{ stage: number; assigned: boolean; completed: boolean }>;
+};
+
+export function getRestaurantRoadmapProgress(steps: RestaurantRoadmapStep[]): RestaurantRoadmapProgress {
+  const stageStates = restaurantImplementationStages.map(({ stage }) => {
+    const assignedSteps = steps.filter((step) => step.stage === stage);
+    return {
+      stage,
+      assigned: assignedSteps.length > 0,
+      completed: assignedSteps.length > 0 && assignedSteps.every((step) => step.status === "completed"),
+    };
+  });
+  const completedStages = stageStates.filter((stage) => stage.completed).length;
+  const totalStages = restaurantImplementationStages.length;
+
+  return {
+    completedStages,
+    totalStages,
+    percentage: totalStages ? Math.round((completedStages / totalStages) * 100) : 0,
+    implementationComplete: completedStages === totalStages,
+    stageStates,
+  };
+}
 
 export function restaurantTaskReference(key: string) {
   return `${prefix}${key}`;
