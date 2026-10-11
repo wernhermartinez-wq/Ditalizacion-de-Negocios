@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assignedRestaurantRoadmapSteps, getCurrentRestaurantStep, mergeRestaurantRoadmapTasks, restaurantRoadmapTemplates } from "./restaurant-roadmap";
+import { assignedRestaurantRoadmapSteps, getCurrentRestaurantStep, mergeRestaurantRoadmapTasks, restaurantRoadmapStages, restaurantRoadmapTemplates } from "./restaurant-roadmap";
 
 describe("restaurant roadmap", () => {
   it("creates a pending roadmap when there are no stored tasks", () => {
@@ -33,5 +33,21 @@ describe("restaurant roadmap", () => {
     const steps = assignedRestaurantRoadmapSteps([task]);
     expect(steps).toHaveLength(1);
     expect(steps[0].key).toBe("google_profile");
+  });
+
+  it("keeps the agreed seven phases and ordered lettered subtasks", () => {
+    expect(restaurantRoadmapStages).toHaveLength(7);
+    expect(restaurantRoadmapTemplates.map((step) => step.code)).toEqual([
+      "1A", "1B", "1C",
+      "2A", "2B", "2C", "2D", "2E",
+      "3A", "3B", "3C", "3D",
+      "4A", "4B", "4C", "4D", "4E", "4F",
+      "5A", "5B", "5C", "5D", "5E", "5F", "5G",
+      "6A", "6B", "6C", "6D", "6E", "6F",
+      "7A", "7B", "7C", "7D", "7E",
+    ]);
+    expect(new Set(restaurantRoadmapTemplates.map((step) => step.key)).size).toBe(restaurantRoadmapTemplates.length);
+    expect(restaurantRoadmapTemplates.find((step) => step.key === "nfc_table")?.stage).toBe(5);
+    expect(restaurantRoadmapTemplates.find((step) => step.key === "nfc_checkout")?.stage).toBe(6);
   });
 });

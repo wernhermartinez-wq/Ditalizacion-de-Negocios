@@ -27,17 +27,17 @@ export default async function RoadmapPage() {
     <main className="page-content restaurant-roadmap-page">
       <div className="page-heading restaurant-roadmap-heading"><div><p className="eyebrow">{organization.name} · Recorrido acompañado</p><h1>Un paso claro cada vez.</h1><p className="page-description">Nexaro activa las acciones que corresponden a tu restaurante. Cuando una queda comprobada, avanzamos a la siguiente y la incorporamos al historial.</p></div><div className="restaurant-progress"><strong>{completed}/{steps.length || 0}</strong><span>pasos comprobados</span></div></div>
 
-      <section className="restaurant-nfc-summary"><div><p className="eyebrow">Recorrido de fidelización</p><h2>Mesa → Caja → Regreso</h2></div><article><UtensilsCrossed size={21} /><span><strong>NFC Mesa · Descubre</strong><small>Abre carta, alta Wallet, reserva, contacto y reseña opcional.</small></span></article><article><CreditCard size={21} /><span><strong>NFC Caja · Acumula</strong><small>Un lector compatible registra la compra y acredita puntos o saldo.</small></span></article><article><Contact size={21} /><span><strong>Wallet · Regresa</strong><small>La tarjeta permanece en el móvil sin instalar una app.</small></span></article></section>
+      <section className="restaurant-nfc-summary"><div><p className="eyebrow">Recorrido de fidelización</p><h2>Mesa → Caja → Regreso</h2></div><article><UtensilsCrossed size={21} /><span><strong>NFC Mesa · Únete</strong><small>Añade Wallet o accede voluntariamente a la reseña.</small></span></article><article><CreditCard size={21} /><span><strong>NFC Caja · Acumula</strong><small>Un lector compatible registra la compra y acredita puntos o saldo.</small></span></article><article><Contact size={21} /><span><strong>Wallet · Regresa</strong><small>Conserva la tarjeta, el saldo y las recompensas en el móvil.</small></span></article></section>
 
       {steps.length ? <section className="restaurant-route" aria-label="Recorrido de mejora del restaurante">
         <header><div><p className="eyebrow">Tu recorrido activo</p><h2>{current ? `Ahora: ${current.title}` : "Recorrido comprobado"}</h2></div><span>{steps.length} {steps.length === 1 ? "acción activa" : "acciones activas"}</span></header>
-        <div className="restaurant-route-line">{steps.map((step, index) => {
+        <div className="restaurant-route-line">{steps.map((step) => {
           const isCurrent = current?.key === step.key;
           const isComplete = step.status === "completed";
           return <article className={`${isCurrent ? "is-current" : ""} ${isComplete ? "is-complete" : ""}`} key={step.key}>
-            <div className="restaurant-route-marker">{isComplete ? <Check size={18} /> : index + 1}</div>
+            <div className="restaurant-route-marker">{isComplete ? <Check size={18} /> : step.code}</div>
             <div className="restaurant-route-card">
-              <div className="restaurant-route-meta"><span>Fase {step.stage} · {step.stageTitle}</span><span className={`restaurant-status status-${step.status}`}>{restaurantStatusLabels[step.status]}</span></div>
+              <div className="restaurant-route-meta"><span>{step.code} · {step.stageTitle}</span><span className={`restaurant-status status-${step.status}`}>{restaurantStatusLabels[step.status]}</span></div>
               <h3>{step.title}</h3>
               <p>{step.description}</p>
               <dl><div><dt>Qué hace Nexaro</dt><dd>{step.nexaroAction}</dd></div><div><dt>Cómo se comprueba</dt><dd>{step.evidence}</dd></div></dl>
@@ -48,7 +48,7 @@ export default async function RoadmapPage() {
       </section> : <section className="restaurant-route-empty"><MapPin size={27} /><div><p className="eyebrow">Próximo paso</p><h2>Nexaro está preparando tu recorrido.</h2><p>Antes de mostrar tareas genéricas, revisaremos la situación real del restaurante y activaremos sólo la primera acción necesaria.</p></div></section>}
 
       <section className="restaurant-phase-progress" aria-label="Avance por fases">
-        <header><div><p className="eyebrow">Avance general</p><h2>Las seis fases del recorrido</h2></div><span>{focusStage ? `Fase ${focusStage} de ${restaurantRoadmapStages.length}` : "Aún sin comenzar"}</span></header>
+        <header><div><p className="eyebrow">Avance general</p><h2>Las siete fases del recorrido</h2></div><span>{focusStage ? `Fase ${focusStage} de ${restaurantRoadmapStages.length}` : "Aún sin comenzar"}</span></header>
         <div className="restaurant-phase-track">{restaurantRoadmapStages.map((stage) => {
           const isComplete = focusStage > stage.stage || (focusStage === stage.stage && !current && lastCompletedStage === stage.stage);
           const isCurrent = current?.stage === stage.stage;

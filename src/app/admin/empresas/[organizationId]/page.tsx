@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Building2, CalendarDays, CheckCircle2, ClipboardList, Globe2, Mail, PencilLine, RotateCcw, ScanSearch, UserRound } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, CheckCircle2, ClipboardList, Globe2, Mail, RotateCcw, ScanSearch, UserRound } from "lucide-react";
 import { AuthMessage } from "@/components/auth/message";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { dimensionScores } from "@/lib/diagnostics";
@@ -114,7 +114,7 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
                 if (!availableSteps.length) return null;
                 return <section className="admin-plan-checklist-phase" key={stage.stage}>
                   <header><span className="admin-plan-stage">{stage.stage}</span><div><small>Fase {stage.stage} · {stage.period}</small><strong>{stage.title}</strong></div></header>
-                  <div>{availableSteps.map((step) => <label key={step.key}><input type="checkbox" name="stepKey" value={step.key} /><span><strong>{step.title}</strong><small>{step.description}</small></span></label>)}</div>
+                  <div>{availableSteps.map((step) => <label key={step.key}><input type="checkbox" name="stepKey" value={step.key} /><span className="admin-plan-checklist-detail"><span className="admin-plan-item-title"><b>{step.code}</b><strong>{step.title}</strong></span><p>{step.description}</p><dl><div><dt>Necesitamos del restaurante</dt><dd>{step.restaurantInput}</dd></div><div><dt>Acción de Nexaro</dt><dd>{step.nexaroAction}</dd></div><div><dt>Comprobación</dt><dd>{step.evidence}</dd></div></dl></span></label>)}</div>
                 </section>;
               })}</div>
               <div className="admin-plan-catalog-footer"><small>Puedes añadir uno o varios pasos ahora y sumar otros más adelante.</small><SubmitButton pendingLabel="Añadiendo…">Añadir al recorrido</SubmitButton></div>
@@ -122,23 +122,19 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
           </section>
           <section className="admin-panel admin-restaurant-plan">
             <div className="admin-section-title"><div><p>Plan del restaurante</p><h2>Próximas acciones de Nexaro</h2></div><span>{activeRestaurantSteps.length} pendientes</span></div>
-            <p className="admin-plan-intro">Actualiza sólo la tarea en la que vas a trabajar. Al marcarla como comprobada desaparecerá de aquí y subirá automáticamente al historial cronológico.</p>
+            <p className="admin-plan-intro">La información operativa y la edición permanecen siempre visibles. Al marcar un paso como comprobado desaparecerá de aquí y subirá automáticamente al historial cronológico.</p>
             {activeRestaurantSteps.length ? <div className="admin-plan-list">
-              <div className="admin-plan-list-head" aria-hidden="true"><span>Acción</span><span>Estado</span><span>Fecha</span><span /></div>
               {activeRestaurantSteps.map((step) => (
-                <article className="admin-plan-row" key={step.key}>
-                  <span className="admin-plan-stage">{step.stage}</span>
-                  <div className="admin-plan-name"><small>{step.stageTitle}</small><strong>{step.title}</strong></div>
-                  <b className={`admin-plan-status status-${step.status}`}>{restaurantStatusLabels[step.status]}</b>
-                  <time>{step.dueAt ? formatDate(step.dueAt) : "Sin fecha"}</time>
-                  <details className="admin-plan-editor">
-                    <summary><PencilLine size={14} /> Editar</summary>
+                <article className="admin-plan-card" key={step.key}>
+                  <header><span className="admin-plan-stage">{step.code}</span><div className="admin-plan-name"><small>Fase {step.stage} · {step.stageTitle}</small><strong>{step.title}</strong></div><div className="admin-plan-card-state"><b className={`admin-plan-status status-${step.status}`}>{restaurantStatusLabels[step.status]}</b><time>{step.dueAt ? formatDate(step.dueAt) : "Sin fecha prevista"}</time></div></header>
+                  <div className="admin-plan-card-detail"><p>{step.description}</p><dl><div><dt>Necesitamos del restaurante</dt><dd>{step.restaurantInput}</dd></div><div><dt>Acción de Nexaro</dt><dd>{step.nexaroAction}</dd></div><div><dt>Comprobación</dt><dd>{step.evidence}</dd></div></dl></div>
+                  <div className="admin-plan-editor">
                     <form action={updateRestaurantRoadmapStep.bind(null, organization.id, step.key)}>
                       <div className="admin-restaurant-step-fields"><label>Estado<select name="status" defaultValue={step.status}><option value="pending">Pendiente</option><option value="in_progress">En curso</option><option value="completed">Comprobado</option><option value="cancelled">No incluido</option></select></label><label>Fecha prevista<input name="dueDate" type="date" defaultValue={step.dueAt?.slice(0, 10) ?? ""} /></label><label>Fecha realizada<input name="completedDate" type="date" defaultValue={new Date().toISOString().slice(0, 10)} /></label></div>
                       <label className="admin-restaurant-note">Actualización visible para el restaurante<textarea name="note" rows={2} maxLength={1200} defaultValue={step.note ?? ""} placeholder="Ej. Ficha de Google corregida y comprobada desde móvil." /></label>
                       <div className="admin-restaurant-step-footer"><small>Prueba esperada: {step.evidence}</small><SubmitButton pendingLabel="Guardando…">Guardar cambios</SubmitButton></div>
                     </form>
-                  </details>
+                  </div>
                 </article>
               ))}
             </div> : <div className="admin-empty compact"><CheckCircle2 size={22} /><strong>No quedan acciones pendientes.</strong><span>Los pasos comprobados están en el historial de trabajo realizado.</span></div>}
@@ -173,7 +169,7 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
             {workTimeline.length ? <div className="admin-work-timeline">{workTimeline.map((item) => item.kind === "manual" ? (
               <article key={`manual:${item.id}`}><span className="admin-work-date"><CalendarDays size={15} />{formatDate(item.entry.completed_on)}</span><div><small>{workCategoryLabel(item.entry.category)}</small><h3>{item.entry.title}</h3>{item.entry.description && <p>{item.entry.description}</p>}<details className="admin-work-edit"><summary>Editar trabajo</summary><form action={updateWorkEntry.bind(null, organization.id, item.entry.id)}><label>Título<input name="title" required minLength={3} maxLength={160} defaultValue={item.entry.title} /></label><label>Categoría<select name="category" required defaultValue={item.entry.category}>{workCategories.map((category) => <option value={category.value} key={category.value}>{category.label}</option>)}</select></label><label>Fecha de finalización<input name="completedOn" type="date" required defaultValue={item.entry.completed_on} /></label><label className="wide">Detalle<textarea name="description" maxLength={1200} rows={3} defaultValue={item.entry.description ?? ""} /></label><div className="wide"><SubmitButton pendingLabel="Guardando…">Guardar cambios</SubmitButton></div></form></details></div></article>
             ) : (
-              <article key={`plan:${item.id}`}><span className="admin-work-date"><CalendarDays size={15} />{formatDate(item.completedAt)}</span><div><small>Plan del restaurante · Etapa {item.step.stage}</small><h3>{item.step.title}</h3><p>{item.step.note || `Comprobado: ${item.step.evidence}`}</p><details className="admin-work-edit"><summary>Editar registro</summary><form action={updateRestaurantRoadmapStep.bind(null, organization.id, item.step.key)}><label>Estado<select name="status" defaultValue="completed"><option value="completed">Comprobado</option><option value="in_progress">En curso</option><option value="pending">Pendiente</option><option value="cancelled">No incluido</option></select></label><label>Fecha de finalización<input name="completedDate" type="date" required defaultValue={item.completedAt.slice(0, 10)} /></label><input name="dueDate" type="hidden" value={item.step.dueAt?.slice(0, 10) ?? ""} /><label className="wide">Actualización visible<textarea name="note" maxLength={1200} rows={3} defaultValue={item.step.note ?? ""} /></label><div className="wide"><SubmitButton pendingLabel="Guardando…">Guardar cambios</SubmitButton></div></form></details></div></article>
+              <article key={`plan:${item.id}`}><span className="admin-work-date"><CalendarDays size={15} />{formatDate(item.completedAt)}</span><div><small>Plan del restaurante · {item.step.code}</small><h3>{item.step.title}</h3><p>{item.step.note || `Comprobado: ${item.step.evidence}`}</p><details className="admin-work-edit"><summary>Editar registro</summary><form action={updateRestaurantRoadmapStep.bind(null, organization.id, item.step.key)}><label>Estado<select name="status" defaultValue="completed"><option value="completed">Comprobado</option><option value="in_progress">En curso</option><option value="pending">Pendiente</option><option value="cancelled">No incluido</option></select></label><label>Fecha de finalización<input name="completedDate" type="date" required defaultValue={item.completedAt.slice(0, 10)} /></label><input name="dueDate" type="hidden" value={item.step.dueAt?.slice(0, 10) ?? ""} /><label className="wide">Actualización visible<textarea name="note" maxLength={1200} rows={3} defaultValue={item.step.note ?? ""} /></label><div className="wide"><SubmitButton pendingLabel="Guardando…">Guardar cambios</SubmitButton></div></form></details></div></article>
             ))}</div> : <div className="admin-empty compact"><CheckCircle2 size={22} /><strong>Aún no hay trabajos registrados.</strong><span>Completa un paso del plan o registra una intervención adicional.</span></div>}
           </section>
 
