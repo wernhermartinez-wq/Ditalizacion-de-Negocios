@@ -73,7 +73,6 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
   const nexaroTasks = nexaroTasksResult.data ?? [];
   const restaurantSteps = mergeRestaurantRoadmapTasks(nexaroTasks);
   const unassignedRestaurantSteps = restaurantSteps.filter((step) => !step.stored || step.status === "cancelled");
-  const activeRestaurantSteps = restaurantSteps.filter((step) => step.stored && step.status !== "completed" && step.status !== "cancelled");
   const completedRestaurantSteps = restaurantSteps.filter((step) => step.status === "completed" && step.completedAt);
   const workTimeline = [
     ...workEntries.map((entry) => ({ kind: "manual" as const, id: entry.id, completedAt: entry.completed_on, entry })),
@@ -106,38 +105,31 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
       <div className="admin-company-columns">
         <div className="admin-company-primary">
           <AuthMessage error={messages.error} success={messages.success} />
-          <section className="admin-panel admin-plan-catalog">
-            <div className="admin-section-title"><div><p>Checklist Nexaro</p><h2>Añadir los siguientes pasos</h2></div><span>{unassignedRestaurantSteps.length} disponibles</span></div>
-            <p className="admin-plan-intro">Selecciona sólo las acciones que correspondan a la situación real de {organization.name}. Al guardarlas aparecerán en su recorrido.</p>
-            {unassignedRestaurantSteps.length ? <RoadmapSelectionForm action={assignRestaurantRoadmapSteps.bind(null, organization.id)}>
-              <div className="admin-plan-checklist">{restaurantRoadmapStages.map((stage) => {
-                const availableSteps = unassignedRestaurantSteps.filter((step) => step.stage === stage.stage);
-                if (!availableSteps.length) return null;
-                return <section className="admin-plan-checklist-phase" key={stage.stage}>
-                  <header><span className="admin-plan-stage">{stage.stage}</span><div><small>Fase {stage.stage} · {stage.period}</small><strong>{stage.title}</strong></div></header>
-                  <div>{availableSteps.map((step) => <label key={step.key}><input type="checkbox" name="stepKey" value={step.key} /><span className="admin-plan-checklist-detail"><span className="admin-plan-item-title"><b>{step.code}</b><strong>{step.title}</strong></span><p>{step.description}</p><dl><div><dt>Necesitamos del restaurante</dt><dd>{step.restaurantInput}</dd></div><div><dt>Acción de Nexaro</dt><dd>{step.nexaroAction}</dd></div><div><dt>Comprobación</dt><dd>{step.evidence}</dd></div></dl></span></label>)}</div>
-                </section>;
-              })}</div>
-            </RoadmapSelectionForm> : <div className="admin-empty compact"><CheckCircle2 size={22} /><strong>Todo el catálogo ya fue revisado.</strong><span>Las acciones activas y realizadas aparecen debajo.</span></div>}
-          </section>
-          <section className="admin-panel admin-restaurant-plan">
-            <div className="admin-section-title"><div><p>Plan del restaurante</p><h2>Próximas acciones de Nexaro</h2></div><span>{activeRestaurantSteps.length} pendientes</span></div>
-            <p className="admin-plan-intro">La información operativa y la edición permanecen siempre visibles. Al marcar un paso como comprobado desaparecerá de aquí y subirá automáticamente al historial cronológico.</p>
-            {activeRestaurantSteps.length ? <div className="admin-plan-list">
-              {activeRestaurantSteps.map((step) => (
-                <article className="admin-plan-card" key={step.key}>
-                  <header><span className="admin-plan-stage">{step.code}</span><div className="admin-plan-name"><small>Fase {step.stage} · {step.stageTitle}</small><strong>{step.title}</strong></div><div className="admin-plan-card-state"><b className={`admin-plan-status status-${step.status}`}>{restaurantStatusLabels[step.status]}</b><time>{step.dueAt ? formatDate(step.dueAt) : "Sin fecha prevista"}</time></div></header>
-                  <div className="admin-plan-card-detail"><p>{step.description}</p><dl><div><dt>Necesitamos del restaurante</dt><dd>{step.restaurantInput}</dd></div><div><dt>Acción de Nexaro</dt><dd>{step.nexaroAction}</dd></div><div><dt>Comprobación</dt><dd>{step.evidence}</dd></div></dl></div>
-                  <div className="admin-plan-editor">
-                    <form action={updateRestaurantRoadmapStep.bind(null, organization.id, step.key)}>
-                      <div className="admin-restaurant-step-fields"><label>Estado<select name="status" defaultValue={step.status}><option value="pending">Pendiente</option><option value="in_progress">En curso</option><option value="completed">Comprobado</option><option value="cancelled">No incluido</option></select></label><label>Fecha prevista<input name="dueDate" type="date" defaultValue={step.dueAt?.slice(0, 10) ?? ""} /></label><label>Fecha realizada<input name="completedDate" type="date" defaultValue={new Date().toISOString().slice(0, 10)} /></label></div>
+          <section className="admin-panel admin-plan-catalog admin-restaurant-plan">
+            <div className="admin-section-title"><div><p>Plan del restaurante</p><h2>Fases y seguimiento de Nexaro</h2></div><span>{restaurantSteps.filter((step) => step.stored && step.status !== "cancelled").length}/{restaurantSteps.length} añadidos</span></div>
+            <p className="admin-plan-intro">Las fases siempre permanecen en el expediente de {organization.name}. Los pasos añadidos quedan contraídos y marcados; ábrelos sólo cuando necesites actualizar su estado.</p>
+            <div className="admin-plan-checklist">{restaurantRoadmapStages.map((stage) => {
+              const stageSteps = restaurantSteps.filter((step) => step.stage === stage.stage);
+              const assignedCount = stageSteps.filter((step) => step.stored && step.status !== "cancelled").length;
+              const fullyAssigned = assignedCount === stageSteps.length;
+              return <details className={`admin-plan-checklist-phase ${fullyAssigned ? "is-assigned" : ""}`} key={stage.stage} open={!fullyAssigned}>
+                <summary><span className="admin-plan-stage">{fullyAssigned ? <CheckCircle2 size={16} /> : stage.stage}</span><div><small>Fase {stage.stage} · {stage.period}</small><strong>{stage.title}</strong></div><b>{assignedCount}/{stageSteps.length} añadidos</b></summary>
+                <div>{stageSteps.map((step) => {
+                  const assigned = step.stored && step.status !== "cancelled";
+                  if (!assigned) return <label key={step.key}><input form="restaurant-roadmap-selection" type="checkbox" name="stepKey" value={step.key} /><span className="admin-plan-checklist-detail"><span className="admin-plan-item-title"><b>{step.code}</b><strong>{step.title}</strong></span><p>{step.description}</p><dl><div><dt>Necesitamos del restaurante</dt><dd>{step.restaurantInput}</dd></div><div><dt>Acción de Nexaro</dt><dd>{step.nexaroAction}</dd></div><div><dt>Comprobación</dt><dd>{step.evidence}</dd></div></dl></span></label>;
+                  return <details className={`admin-plan-assigned-step status-${step.status}`} key={step.key}>
+                    <summary><CheckCircle2 size={17} /><span><small>{step.code} · {step.stageTitle}</small><strong>{step.title}</strong></span><b>{restaurantStatusLabels[step.status]}</b></summary>
+                    <div className="admin-plan-card-detail"><p>{step.description}</p><dl><div><dt>Necesitamos del restaurante</dt><dd>{step.restaurantInput}</dd></div><div><dt>Acción de Nexaro</dt><dd>{step.nexaroAction}</dd></div><div><dt>Comprobación</dt><dd>{step.evidence}</dd></div></dl></div>
+                    <div className="admin-plan-editor"><form action={updateRestaurantRoadmapStep.bind(null, organization.id, step.key)}>
+                      <div className="admin-restaurant-step-fields"><label>Estado<select name="status" defaultValue={step.status}><option value="pending">Pendiente</option><option value="in_progress">En curso</option><option value="completed">Comprobado</option><option value="cancelled">No incluido</option></select></label><label>Fecha prevista<input name="dueDate" type="date" defaultValue={step.dueAt?.slice(0, 10) ?? ""} /></label><label>Fecha realizada<input name="completedDate" type="date" defaultValue={step.completedAt?.slice(0, 10) ?? new Date().toISOString().slice(0, 10)} /></label></div>
                       <label className="admin-restaurant-note">Actualización visible para el restaurante<textarea name="note" rows={2} maxLength={1200} defaultValue={step.note ?? ""} placeholder="Ej. Ficha de Google corregida y comprobada desde móvil." /></label>
                       <div className="admin-restaurant-step-footer"><small>Prueba esperada: {step.evidence}</small><SubmitButton pendingLabel="Guardando…">Guardar cambios</SubmitButton></div>
-                    </form>
-                  </div>
-                </article>
-              ))}
-            </div> : <div className="admin-empty compact"><CheckCircle2 size={22} /><strong>No quedan acciones pendientes.</strong><span>Los pasos comprobados están en el historial de trabajo realizado.</span></div>}
+                    </form></div>
+                  </details>;
+                })}</div>
+              </details>;
+            })}</div>
+            <RoadmapSelectionForm formId="restaurant-roadmap-selection" availableCount={unassignedRestaurantSteps.length} action={assignRestaurantRoadmapSteps.bind(null, organization.id)} />
           </section>
 
           {diagnostic?.status === "completed" && (
