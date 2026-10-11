@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -6,13 +5,10 @@ import { ArrowLeft, Building2, CalendarDays, CheckCircle2, ClipboardList, Globe2
 import { AuthMessage } from "@/components/auth/message";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { RoadmapSelectionForm } from "@/components/admin/roadmap-selection-form";
-import { dimensionScores } from "@/lib/diagnostics";
-import { loadDiagnosticSnapshot, roadmapFromSnapshot } from "@/lib/diagnostic-snapshots";
-import { roadmapTasks } from "@/lib/roadmap";
 import { isRestaurantRoadmapTask, mergeRestaurantRoadmapTasks, restaurantRoadmapStages, restaurantStatusLabels } from "@/lib/restaurant-roadmap";
 import { createClient } from "@/lib/supabase/server";
 import { workCategories, workCategoryLabel } from "@/lib/work";
-import { addWorkEntry, assignRestaurantRoadmapSteps, completeNexaroTask, completeRoadmapTask, reopenNexaroTask, reopenRoadmapTask, updateRestaurantRoadmapStep, updateWorkEntry, validateDiagnostic } from "./actions";
+import { addWorkEntry, assignRestaurantRoadmapSteps, completeNexaroTask, reopenNexaroTask, updateRestaurantRoadmapStep, updateWorkEntry } from "./actions";
 
 export const metadata: Metadata = { title: "Empresa · Control Nexaro" };
 
@@ -31,41 +27,16 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
   const { data: organization, error: organizationError } = await supabase.from("organizations").select("*").eq("id", organizationId).maybeSingle();
   if (organizationError || !organization) notFound();
 
-  const { data: activeQuestionnaire } = await supabase.from("diagnostic_questionnaires").select("id").eq("is_active", true).single();
-  const [membershipsResult, usersResult, profilesResult, diagnosticsResult, workResult, questionsResult, nexaroTasksResult] = await Promise.all([
+  const [membershipsResult, usersResult, profilesResult, workResult, nexaroTasksResult] = await Promise.all([
     supabase.from("organization_memberships").select("*").eq("organization_id", organizationId),
     supabase.from("platform_users").select("*"),
     supabase.from("profiles").select("*"),
-    activeQuestionnaire
-      ? supabase.from("diagnostics").select("*").eq("organization_id", organizationId).eq("questionnaire_id", activeQuestionnaire.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
-      : Promise.resolve({ data: null, error: null }),
     supabase.from("nexaro_work_entries").select("*").eq("organization_id", organizationId).order("completed_on", { ascending: false }).order("created_at", { ascending: false }),
-    activeQuestionnaire
-      ? supabase.from("diagnostic_questions").select("*").eq("questionnaire_id", activeQuestionnaire.id).order("position")
-      : Promise.resolve({ data: [], error: null }),
     supabase.from("nexaro_tasks").select("*").eq("organization_id", organizationId).order("created_at", { ascending: false }),
   ]);
-  if ([membershipsResult, usersResult, profilesResult, diagnosticsResult, workResult, questionsResult, nexaroTasksResult].some((result) => result.error)) {
+  if ([membershipsResult, usersResult, profilesResult, workResult, nexaroTasksResult].some((result) => result.error)) {
     throw new Error("No se pudo cargar el expediente de la empresa.");
   }
-
-  const diagnostic = diagnosticsResult.data;
-  const [responsesResult, completionsResult] = diagnostic
-    ? await Promise.all([
-        supabase.from("diagnostic_responses").select("*").eq("diagnostic_id", diagnostic.id),
-        supabase.from("roadmap_task_completions").select("*").eq("diagnostic_id", diagnostic.id).order("completed_at", { ascending: false }),
-      ])
-    : [{ data: [], error: null }, { data: [], error: null }];
-  if (responsesResult.error || completionsResult.error) throw new Error("No se pudo cargar el avance de la empresa.");
-  const questions = questionsResult.data ?? [];
-  const responses = responsesResult.data ?? [];
-  const snapshot = diagnostic?.status === "validated" ? await loadDiagnosticSnapshot(supabase, diagnostic.id) : null;
-  const allTasks = snapshot ? roadmapTasks(roadmapFromSnapshot(snapshot.itemRows)) : [];
-  const provisionalDimensions = diagnostic?.status === "completed" ? dimensionScores(questions, responses) : [];
-  const completions = completionsResult.data ?? [];
-  const completedKeys = new Set(completions.map((completion) => completion.task_key));
-  const tasks = allTasks.filter((task) => !completedKeys.has(task.id));
-  const taskByKey = new Map(allTasks.map((task) => [task.id, task]));
   const users = usersResult.data ?? [];
   const profiles = profilesResult.data ?? [];
   const memberships = membershipsResult.data ?? [];
@@ -89,10 +60,6 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
       <div className="admin-company-hero">
         <div className="admin-company-hero-mark">{organization.name.slice(0, 2).toUpperCase()}</div>
         <div><p>Expediente de empresa</p><h1>{organization.name}</h1><span>{organization.sector ?? "Sector sin definir"} · {organization.city ?? organization.country}</span></div>
-        <div className={`admin-diagnostic-state ${diagnostic?.status === "validated" ? "complete" : "pending"}`}>
-          <small>Diagnóstico comercial</small>
-          <strong>{diagnostic?.status === "validated" ? `${Math.round(diagnostic.provisional_score ?? 0)}/100` : diagnostic?.status === "completed" ? "Por validar" : diagnostic ? "En curso" : "Pendiente"}</strong>
-        </div>
       </div>
 
       <section className="admin-company-facts">
@@ -132,19 +99,6 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
             <RoadmapSelectionForm formId="restaurant-roadmap-selection" availableCount={unassignedRestaurantSteps.length} action={assignRestaurantRoadmapSteps.bind(null, organization.id)} />
           </section>
 
-          {diagnostic?.status === "completed" && (
-            <section className="admin-panel admin-diagnostic-review">
-              <div className="admin-section-title"><div><p>Revisión requerida</p><h2>Validar diagnóstico enviado</h2></div><span>Resultado provisional</span></div>
-              <p>Comprueba las respuestas antes de confirmar. Al validar se congelarán la puntuación y la hoja de ruta; las dimensiones no aplicables quedarán como “Sin evaluar”.</p>
-              <div className="admin-diagnostic-preview">
-                {provisionalDimensions.map((dimension) => <span key={dimension.key}><small>{dimension.code}</small><strong>{dimension.score === null ? "Sin evaluar" : Math.round(dimension.score)}</strong></span>)}
-              </div>
-              <form action={validateDiagnostic.bind(null, organization.id, diagnostic.id)}>
-                <SubmitButton pendingLabel="Validando…">Validar resultado y hoja de ruta</SubmitButton>
-              </form>
-            </section>
-          )}
-
           <section className="admin-panel">
             <div className="admin-section-title"><div><p>Intervención</p><h2>Registrar trabajo realizado</h2></div><span>Visible para el cliente</span></div>
             <form action={addWorkEntryForCompany} className="admin-work-form">
@@ -173,22 +127,11 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
           </section>
 
           <section className="admin-panel">
-            <div className="admin-section-title"><div><p>Hoja de ruta</p><h2>Tareas pendientes sugeridas</h2></div><span>{tasks.length} acciones</span></div>
-            {tasks.length && diagnostic ? <div className="admin-pending-tasks">{tasks.map((task) => (
-              <article key={task.id} style={{ "--task-color": task.color } as CSSProperties}><i /><div><strong>{task.title}</strong><small>{task.code} · {task.dimension} · {task.period}</small></div><form action={completeRoadmapTask.bind(null, organization.id, diagnostic.id, task.id)}><button type="submit"><CheckCircle2 size={15} /> Marcar realizada</button></form></article>
-            ))}</div> : <div className="admin-empty compact"><ClipboardList size={22} /><strong>{diagnostic?.status === "validated" ? "No quedan tareas pendientes." : diagnostic?.status === "completed" ? "La hoja de ruta espera validación." : "El diagnóstico comercial no está completado."}</strong><span>{diagnostic?.status === "validated" ? "Todas las acciones de esta hoja de ruta están realizadas." : diagnostic?.status === "completed" ? "Valida el diagnóstico para congelar y activar sus tareas." : "Las tareas aparecerán cuando la empresa finalice sus respuestas."}</span></div>}
-          </section>
-
-          <section className="admin-panel">
-            <div className="admin-section-title"><div><p>Seguimiento</p><h2>Tareas realizadas y comprobadas</h2></div><span>{completions.length + completedNexaroTasks.length} acciones</span></div>
+            <div className="admin-section-title"><div><p>Seguimiento</p><h2>Tareas realizadas y comprobadas</h2></div><span>{completedNexaroTasks.length} acciones</span></div>
             {completedNexaroTasks.length > 0 && <div className="admin-completed-tasks">{completedNexaroTasks.map((task) => (
               <article key={task.id}><CheckCircle2 size={17} /><div><strong>{task.title}</strong><small>{task.source === "visibility" ? "Visibilidad SEO e IA" : "Seguimiento Nexaro"} · Realizada el {task.completed_at ? formatDate(task.completed_at) : "—"}</small></div><form action={reopenNexaroTask.bind(null, organization.id, task.id)}><button type="submit"><RotateCcw size={14} /> Volver a pendientes</button></form></article>
             ))}</div>}
-            {completions.length && diagnostic ? <div className="admin-completed-tasks">{completions.map((completion) => {
-              const task = taskByKey.get(completion.task_key);
-              return <article key={completion.id}><CheckCircle2 size={17} /><div><strong>{completion.title}</strong><small>{task ? `${task.code} · ${task.dimension} · ` : ""}Realizada el {formatDate(completion.completed_at)}</small></div><form action={reopenRoadmapTask.bind(null, organization.id, diagnostic.id, completion.task_key)}><button type="submit"><RotateCcw size={14} /> Volver a pendientes</button></form></article>;
-            })}</div> : null}
-            {!completions.length && !completedNexaroTasks.length && <div className="admin-empty compact"><CheckCircle2 size={22} /><strong>Aún no hay tareas realizadas.</strong><span>Marca una acción cuando Nexaro la haya ejecutado y comprobado.</span></div>}
+            {!completedNexaroTasks.length && <div className="admin-empty compact"><CheckCircle2 size={22} /><strong>Aún no hay tareas operativas realizadas.</strong><span>Los pasos del plan comprobados aparecen en el historial cronológico superior.</span></div>}
           </section>
         </div>
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Building2, CheckCircle2, CircleDashed, ClipboardCheck, Clock3, UsersRound } from "lucide-react";
+import { ArrowRight, Building2, CheckCircle2, CircleDashed, Clock3, Route, UsersRound } from "lucide-react";
 import { CreateCompanyDialog } from "@/components/admin/create-company-dialog";
 import { AuthMessage } from "@/components/auth/message";
 import { createClient } from "@/lib/supabase/server";
@@ -14,45 +14,34 @@ function shortDate(value: string | null) {
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ error?: string; success?: string }> }) {
   const [supabase, messages] = await Promise.all([createClient(), searchParams]);
-  const { data: activeQuestionnaire } = await supabase
-    .from("diagnostic_questionnaires")
-    .select("id")
-    .eq("is_active", true)
-    .single();
-
-  const [usersResult, profilesResult, membershipsResult, organizationsResult, diagnosticsResult, workResult, registrationsResult, roadmapsResult, roadmapItemsResult] = await Promise.all([
+  const [usersResult, profilesResult, membershipsResult, organizationsResult, workResult, registrationsResult, nexaroTasksResult] = await Promise.all([
     supabase.from("platform_users").select("*").order("registered_at", { ascending: false }),
     supabase.from("profiles").select("*"),
     supabase.from("organization_memberships").select("*"),
     supabase.from("organizations").select("*").order("created_at", { ascending: false }),
-    supabase.from("diagnostics").select("*").order("created_at", { ascending: false }),
     supabase.from("nexaro_work_entries").select("*"),
     supabase.from("company_registrations").select("*").order("created_at", { ascending: false }),
-    supabase.from("roadmaps").select("id, assessment_id"),
-    supabase.from("roadmap_items").select("roadmap_id, actions"),
+    supabase.from("nexaro_tasks").select("organization_id,status,source_reference"),
   ]);
-  const firstError = [usersResult, profilesResult, membershipsResult, organizationsResult, diagnosticsResult, workResult, registrationsResult, roadmapsResult, roadmapItemsResult].find((result) => result.error)?.error;
+  const firstError = [usersResult, profilesResult, membershipsResult, organizationsResult, workResult, registrationsResult, nexaroTasksResult].find((result) => result.error)?.error;
   if (firstError) throw new Error("No se pudo cargar el control administrativo.");
 
   const users = usersResult.data ?? [];
   const profiles = profilesResult.data ?? [];
   const memberships = membershipsResult.data ?? [];
   const organizations = organizationsResult.data ?? [];
-  const diagnostics = diagnosticsResult.data ?? [];
   const workEntries = workResult.data ?? [];
-  const roadmaps = roadmapsResult.data ?? [];
-  const roadmapItems = roadmapItemsResult.data ?? [];
+  const restaurantTasks = (nexaroTasksResult.data ?? []).filter((task) => task.source_reference?.startsWith("restaurant:"));
   const pendingRegistrations = (registrationsResult.data ?? []).filter((registration) => registration.status === "pending");
   const profileByUser = new Map(profiles.map((profile) => [profile.user_id, profile]));
   const userById = new Map(users.map((user) => [user.user_id, user]));
-  const activeDiagnostics = diagnostics.filter((diagnostic) => diagnostic.questionnaire_id === activeQuestionnaire?.id);
-  const completedCount = activeDiagnostics.filter((diagnostic) => diagnostic.status === "validated").length;
+  const organizationsWithPlan = new Set(restaurantTasks.filter((task) => task.status !== "cancelled").map((task) => task.organization_id)).size;
   const usersWithoutCompany = users.filter((user) => !memberships.some((membership) => membership.user_id === user.user_id));
 
   return (
     <main className="admin-page">
       <div className="admin-heading">
-        <div><p>Panel operativo</p><h1>Qué necesita cada empresa y qué hizo Nexaro.</h1><span>El estado se calcula con registros reales de usuarios, diagnósticos y trabajo realizado.</span></div>
+        <div><p>Panel operativo</p><h1>Qué necesita cada restaurante y qué hizo Nexaro.</h1><span>El estado se calcula con el plan específico de cada restaurante y el trabajo realizado por Nexaro.</span></div>
         <div className="admin-heading-actions"><CreateCompanyDialog /><div className="admin-date">Actualizado<br /><strong>{shortDate(new Date().toISOString())}</strong></div></div>
       </div>
 
@@ -61,7 +50,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       <section className="admin-kpis" aria-label="Resumen administrativo">
         <article><UsersRound size={20} /><span><small>Usuarios registrados</small><strong>{users.length}</strong></span></article>
         <article><Building2 size={20} /><span><small>Empresas activas</small><strong>{organizations.length}</strong></span></article>
-        <article><ClipboardCheck size={20} /><span><small>Diagnósticos validados</small><strong>{completedCount}</strong></span></article>
+        <article><Route size={20} /><span><small>Planes activos</small><strong>{organizationsWithPlan}</strong></span></article>
         <article><CheckCircle2 size={20} /><span><small>Trabajos registrados</small><strong>{workEntries.length}</strong></span></article>
       </section>
 
@@ -90,21 +79,18 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               const ownerMembership = companyMemberships.find((membership) => membership.role === "owner") ?? companyMemberships[0];
               const ownerUser = ownerMembership ? userById.get(ownerMembership.user_id) : null;
               const ownerProfile = ownerMembership ? profileByUser.get(ownerMembership.user_id) : null;
-              const diagnostic = activeDiagnostics.find((item) => item.organization_id === organization.id);
-              const completed = diagnostic?.status === "validated";
-              const roadmap = diagnostic ? roadmaps.find((item) => item.assessment_id === diagnostic.id) : null;
-              const taskCount = roadmapItems
-                .filter((item) => item.roadmap_id === roadmap?.id)
-                .reduce((sum, item) => sum + (Array.isArray(item.actions) ? item.actions.length : 0), 0);
+              const companyPlanTasks = restaurantTasks.filter((task) => task.organization_id === organization.id && task.status !== "cancelled");
+              const completedPlanTasks = companyPlanTasks.filter((task) => task.status === "completed").length;
+              const pendingPlanTasks = companyPlanTasks.filter((task) => task.status === "pending" || task.status === "in_progress").length;
               const companyWork = workEntries.filter((entry) => entry.organization_id === organization.id).length;
               return (
                 <Link className="admin-company-row" href={`/admin/empresas/${organization.id}`} key={organization.id}>
                   <span className="admin-company-mark">{organization.name.slice(0, 2).toUpperCase()}</span>
                   <span className="admin-company-identity"><strong>{organization.name}</strong><small>{ownerProfile?.full_name ?? "Responsable sin nombre"} · {ownerUser?.email ?? "Sin correo"}</small></span>
                   <span><small>Sector</small><strong>{organization.sector ?? "Sin definir"}</strong></span>
-                  <span><small>Diagnóstico</small><strong className={completed ? "status-complete" : "status-pending"}>{completed ? `${Math.round(diagnostic.provisional_score ?? 0)}/100` : diagnostic?.status === "completed" ? "Por validar" : diagnostic ? "En curso" : "Pendiente"}</strong></span>
-                  <span><small>Intervenciones</small><strong>{companyWork}</strong></span>
-                  <span><small>Tareas sugeridas</small><strong>{taskCount || "—"}</strong></span>
+                  <span><small>Plan Nexaro</small><strong className={companyPlanTasks.length ? "status-complete" : "status-pending"}>{companyPlanTasks.length ? `${completedPlanTasks}/${companyPlanTasks.length} comprobados` : "Por preparar"}</strong></span>
+                  <span><small>Intervenciones</small><strong>{companyWork + completedPlanTasks}</strong></span>
+                  <span><small>Pasos pendientes</small><strong>{pendingPlanTasks || "—"}</strong></span>
                   <ArrowRight size={18} />
                 </Link>
               );

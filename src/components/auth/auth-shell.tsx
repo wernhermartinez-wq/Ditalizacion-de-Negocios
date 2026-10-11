@@ -20,9 +20,9 @@ export function AuthShell({
         <Link href="/login" className="brand-logo-link" aria-label="Nexaro, acceso"><BrandLogo className="auth-brand-logo" /></Link>
         <div className="story-copy">
           <h1>Convierte tu avance digital en decisiones claras.</h1>
-          <p>Diagnóstico, prioridades y trabajo realizado en un mismo espacio para que tu empresa sepa dónde está y cuál es el siguiente paso.</p>
+          <p>Radar digital, plan de mejora y trabajo realizado en un mismo espacio para que tu restaurante sepa dónde está y cuál es el siguiente paso.</p>
         </div>
-        <div className="dimension-stripe" aria-label="Seis dimensiones de madurez digital">
+        <div className="dimension-stripe" aria-label="Recorrido de mejora digital">
           {colors.map((color, index) => (
             <span key={color} style={{ "--stripe": color, "--opacity": 0.55 + index * 0.08 } as React.CSSProperties} />
           ))}
