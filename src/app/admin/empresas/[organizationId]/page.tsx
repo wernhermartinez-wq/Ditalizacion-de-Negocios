@@ -8,7 +8,7 @@ import { SubmitButton } from "@/components/auth/submit-button";
 import { dimensionScores } from "@/lib/diagnostics";
 import { loadDiagnosticSnapshot, roadmapFromSnapshot } from "@/lib/diagnostic-snapshots";
 import { roadmapTasks } from "@/lib/roadmap";
-import { isRestaurantRoadmapTask, mergeRestaurantRoadmapTasks, restaurantStatusLabels } from "@/lib/restaurant-roadmap";
+import { isRestaurantRoadmapTask, mergeRestaurantRoadmapTasks, restaurantRoadmapStages, restaurantStatusLabels } from "@/lib/restaurant-roadmap";
 import { createClient } from "@/lib/supabase/server";
 import { workCategories, workCategoryLabel } from "@/lib/work";
 import { addWorkEntry, assignRestaurantRoadmapSteps, completeNexaroTask, completeRoadmapTask, reopenNexaroTask, reopenRoadmapTask, updateRestaurantRoadmapStep, updateWorkEntry, validateDiagnostic } from "./actions";
@@ -109,7 +109,14 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
             <div className="admin-section-title"><div><p>Checklist Nexaro</p><h2>Añadir los siguientes pasos</h2></div><span>{unassignedRestaurantSteps.length} disponibles</span></div>
             <p className="admin-plan-intro">Selecciona sólo las acciones que correspondan a la situación real de {organization.name}. Al guardarlas aparecerán en su recorrido.</p>
             {unassignedRestaurantSteps.length ? <form action={assignRestaurantRoadmapSteps.bind(null, organization.id)}>
-              <div className="admin-plan-checklist">{unassignedRestaurantSteps.map((step) => <label key={step.key}><input type="checkbox" name="stepKey" value={step.key} /><span className="admin-plan-stage">{step.stage}</span><span><small>{step.stageTitle}</small><strong>{step.title}</strong></span></label>)}</div>
+              <div className="admin-plan-checklist">{restaurantRoadmapStages.map((stage) => {
+                const availableSteps = unassignedRestaurantSteps.filter((step) => step.stage === stage.stage);
+                if (!availableSteps.length) return null;
+                return <section className="admin-plan-checklist-phase" key={stage.stage}>
+                  <header><span className="admin-plan-stage">{stage.stage}</span><div><small>Fase {stage.stage} · {stage.period}</small><strong>{stage.title}</strong></div></header>
+                  <div>{availableSteps.map((step) => <label key={step.key}><input type="checkbox" name="stepKey" value={step.key} /><span><strong>{step.title}</strong><small>{step.description}</small></span></label>)}</div>
+                </section>;
+              })}</div>
               <div className="admin-plan-catalog-footer"><small>Puedes añadir uno o varios pasos ahora y sumar otros más adelante.</small><SubmitButton pendingLabel="Añadiendo…">Añadir al recorrido</SubmitButton></div>
             </form> : <div className="admin-empty compact"><CheckCircle2 size={22} /><strong>Todo el catálogo ya fue revisado.</strong><span>Las acciones activas y realizadas aparecen debajo.</span></div>}
           </section>

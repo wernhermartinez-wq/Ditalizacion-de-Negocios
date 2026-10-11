@@ -29,10 +29,10 @@ const prefix = "restaurant:";
 export const restaurantRoadmapTemplates: RestaurantRoadmapTemplate[] = [
   {
     key: "local_baseline", stage: 1, stageTitle: "Preparar el local", period: "Días 1–7",
-    title: "Revisar la situación real del restaurante",
-    description: "Comprobamos horarios, contacto, carta, reservas y cómo encuentra hoy el cliente la información básica.",
-    nexaroAction: "Nexaro documenta el punto de partida y detecta errores que frenan visitas o reservas.",
-    evidence: "Ficha inicial revisada y datos clave documentados.", owner: "Nexaro", priority: "high",
+    title: "Analizar el restaurante y su presencia digital",
+    description: "Creamos un radar inicial del negocio: propuesta, presencia local, carta, reservas, reputación, captación y herramientas actuales.",
+    nexaroAction: "Nexaro revisa el negocio y sus canales digitales para detectar brechas, oportunidades y el orden correcto de actuación.",
+    evidence: "Radar inicial documentado con situación, prioridades y próximos pasos.", owner: "Nexaro", priority: "high",
   },
   {
     key: "accesses", stage: 1, stageTitle: "Preparar el local", period: "Días 1–7",
