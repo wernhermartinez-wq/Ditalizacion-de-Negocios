@@ -99,6 +99,14 @@ export const restaurantRoadmapTemplates: RestaurantRoadmapTemplate[] = [
   },
 ];
 
+export const restaurantRoadmapStages = Array.from(
+  new Map(restaurantRoadmapTemplates.map((step) => [step.stage, {
+    stage: step.stage,
+    title: step.stageTitle,
+    period: step.period,
+  }])).values(),
+);
+
 export function restaurantTaskReference(key: string) {
   return `${prefix}${key}`;
 }
@@ -126,6 +134,10 @@ export function mergeRestaurantRoadmapTasks(tasks: Tables<"nexaro_tasks">[]): Re
   });
 }
 
+export function assignedRestaurantRoadmapSteps(tasks: Tables<"nexaro_tasks">[]) {
+  return mergeRestaurantRoadmapTasks(tasks).filter((step) => step.stored && step.status !== "cancelled");
+}
+
 export function getCurrentRestaurantStep(steps: RestaurantRoadmapStep[]) {
   return steps.find((step) => step.status === "in_progress")
     ?? steps.find((step) => step.status === "pending")
@@ -133,7 +145,7 @@ export function getCurrentRestaurantStep(steps: RestaurantRoadmapStep[]) {
 }
 
 export const restaurantStatusLabels: Record<RestaurantRoadmapStatus, string> = {
-  pending: "Por preparar",
+  pending: "Pendiente",
   in_progress: "En curso",
   completed: "Comprobado",
   cancelled: "No incluido",

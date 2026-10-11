@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Dashboard } from "@/components/app/dashboard";
 import { getCurrentOrganization } from "@/lib/organizations";
-import { mergeRestaurantRoadmapTasks } from "@/lib/restaurant-roadmap";
+import { assignedRestaurantRoadmapSteps } from "@/lib/restaurant-roadmap";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Inicio" };
@@ -18,6 +18,8 @@ export default async function DashboardPage() {
     supabase.from("nexaro_tasks").select("*").eq("organization_id", organization.id).order("created_at"),
     supabase.from("nexaro_work_entries").select("id", { count: "exact", head: true }).eq("organization_id", organization.id),
   ]);
-  if (tasksResult.error) throw new Error("No se pudo cargar el plan del restaurante.");
-  return <Dashboard organizationName={organization.name} steps={mergeRestaurantRoadmapTasks(tasksResult.data ?? [])} workCount={workResult.count ?? 0} />;
+  if (tasksResult.error || workResult.error) throw new Error("No se pudo cargar el seguimiento del restaurante.");
+  const steps = assignedRestaurantRoadmapSteps(tasksResult.data ?? []);
+  const completedPlanSteps = steps.filter((step) => step.status === "completed").length;
+  return <Dashboard organizationName={organization.name} steps={steps} workCount={(workResult.count ?? 0) + completedPlanSteps} />;
 }

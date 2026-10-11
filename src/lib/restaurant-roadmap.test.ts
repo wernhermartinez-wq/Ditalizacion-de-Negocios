@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCurrentRestaurantStep, mergeRestaurantRoadmapTasks, restaurantRoadmapTemplates } from "./restaurant-roadmap";
+import { assignedRestaurantRoadmapSteps, getCurrentRestaurantStep, mergeRestaurantRoadmapTasks, restaurantRoadmapTemplates } from "./restaurant-roadmap";
 
 describe("restaurant roadmap", () => {
   it("creates a pending roadmap when there are no stored tasks", () => {
@@ -20,5 +20,18 @@ describe("restaurant roadmap", () => {
     const steps = mergeRestaurantRoadmapTasks([task]);
     expect(getCurrentRestaurantStep(steps)?.key).toBe("google_profile");
     expect(steps.find((step) => step.key === "google_profile")?.note).toBe("Validando fotografías");
+  });
+
+  it("only exposes steps that Nexaro assigned to the restaurant", () => {
+    const task = {
+      source_reference: "restaurant:google_profile",
+      status: "pending",
+      description: null,
+      due_at: null,
+      completed_at: null,
+    } as Parameters<typeof assignedRestaurantRoadmapSteps>[0][number];
+    const steps = assignedRestaurantRoadmapSteps([task]);
+    expect(steps).toHaveLength(1);
+    expect(steps[0].key).toBe("google_profile");
   });
 });

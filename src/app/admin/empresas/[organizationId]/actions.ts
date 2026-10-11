@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { isPlatformAdmin } from "@/lib/admin";
 import { buildDiagnosticSnapshot, DIAGNOSTIC_FORMULA_VERSION, loadDiagnosticSnapshot, roadmapFromSnapshot } from "@/lib/diagnostic-snapshots";
 import { roadmapTasks } from "@/lib/roadmap";
-import { getRestaurantRoadmapTemplate, restaurantTaskReference } from "@/lib/restaurant-roadmap";
+import { getRestaurantRoadmapTemplate, restaurantRoadmapTemplates, restaurantTaskReference } from "@/lib/restaurant-roadmap";
 import { createClient } from "@/lib/supabase/server";
 import { workCategories } from "@/lib/work";
 
@@ -238,6 +238,60 @@ export async function reopenNexaroTask(organizationId: string, taskId: string) {
   return updateNexaroTask(organizationId, taskId, false);
 }
 
+export async function assignRestaurantRoadmapSteps(organizationId: string, formData: FormData) {
+  if (!/^[0-9a-f-]{36}$/i.test(organizationId)) redirect("/admin");
+  const validKeys = new Set(restaurantRoadmapTemplates.map((step) => step.key));
+  const selectedKeys = Array.from(new Set(formData.getAll("stepKey").map(String))).filter((key) => validKeys.has(key));
+  if (!selectedKeys.length) message(organizationId, "error", "Selecciona al menos una acción para añadir al recorrido.");
+
+  const supabase = await createClient();
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const userId = typeof claimsData?.claims?.sub === "string" ? claimsData.claims.sub : null;
+  if (claimsError || !userId) redirect("/login");
+  if (!(await isPlatformAdmin(supabase, userId))) redirect("/app");
+
+  const references = selectedKeys.map(restaurantTaskReference);
+  const { data: existing, error: existingError } = await supabase
+    .from("nexaro_tasks")
+    .select("source_reference,status")
+    .eq("organization_id", organizationId)
+    .eq("source", "manual")
+    .in("source_reference", references);
+  if (existingError) message(organizationId, "error", "No se pudo comprobar el recorrido actual.");
+  const existingReferences = new Set((existing ?? []).map((task) => task.source_reference));
+  const reactivatedReferences = (existing ?? []).filter((task) => task.status === "cancelled").map((task) => task.source_reference).filter((reference): reference is string => Boolean(reference));
+  const rows = selectedKeys
+    .filter((key) => !existingReferences.has(restaurantTaskReference(key)))
+    .map((key) => getRestaurantRoadmapTemplate(key))
+    .filter((template): template is NonNullable<typeof template> => Boolean(template))
+    .map((template) => ({
+      organization_id: organizationId,
+      source: "manual" as const,
+      source_reference: restaurantTaskReference(template.key),
+      title: template.title,
+      description: null,
+      priority: template.priority,
+      status: "pending" as const,
+      created_by: userId,
+    }));
+
+  if (rows.length) {
+    const { error } = await supabase.from("nexaro_tasks").insert(rows);
+    if (error) message(organizationId, "error", "No se pudieron añadir las acciones al recorrido.");
+  }
+  if (reactivatedReferences.length) {
+    const { error } = await supabase.from("nexaro_tasks").update({ status: "pending", completed_at: null, completed_by: null, updated_at: new Date().toISOString() }).eq("organization_id", organizationId).eq("status", "cancelled").in("source_reference", reactivatedReferences);
+    if (error) message(organizationId, "error", "No se pudieron reactivar las acciones seleccionadas.");
+  }
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/empresas/${organizationId}`);
+  revalidatePath("/app");
+  revalidatePath("/app/hoja-de-ruta");
+  const assignedCount = rows.length + reactivatedReferences.length;
+  message(organizationId, "success", assignedCount === 1 ? "Acción añadida al recorrido del restaurante." : `${assignedCount} acciones añadidas al recorrido del restaurante.`);
+}
+
 export async function updateRestaurantRoadmapStep(organizationId: string, stepKey: string, formData: FormData) {
   if (!/^[0-9a-f-]{36}$/i.test(organizationId)) redirect("/admin");
   const template = getRestaurantRoadmapTemplate(stepKey);
@@ -247,7 +301,9 @@ export async function updateRestaurantRoadmapStep(organizationId: string, stepKe
   if (!allowedStatuses.has(status)) message(organizationId, "error", "El estado seleccionado no es válido.");
   const note = field(formData, "note", 1200);
   const dueDate = field(formData, "dueDate", 10);
+  const completedDate = field(formData, "completedDate", 10);
   if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) message(organizationId, "error", "La fecha prevista no es válida.");
+  if (completedDate && !/^\d{4}-\d{2}-\d{2}$/.test(completedDate)) message(organizationId, "error", "La fecha de realización no es válida.");
 
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
@@ -255,25 +311,52 @@ export async function updateRestaurantRoadmapStep(organizationId: string, stepKe
   if (claimsError || !userId) redirect("/login");
   if (!(await isPlatformAdmin(supabase, userId))) redirect("/app");
 
+  const sourceReference = restaurantTaskReference(template.key);
+  const { data: existing, error: existingError } = await supabase
+    .from("nexaro_tasks")
+    .select("id,status,completed_at")
+    .eq("organization_id", organizationId)
+    .eq("source", "manual")
+    .eq("source_reference", sourceReference)
+    .maybeSingle();
+  if (existingError) message(organizationId, "error", "No se pudo consultar el estado actual del plan.");
+
   const completed = status === "completed";
-  const { error } = await supabase.from("nexaro_tasks").upsert({
-    organization_id: organizationId,
-    source: "manual",
-    source_reference: restaurantTaskReference(template.key),
+  const completedAt = completed
+    ? completedDate
+      ? new Date(`${completedDate}T12:00:00.000Z`).toISOString()
+      : existing?.status === "completed" && existing.completed_at
+        ? existing.completed_at
+        : new Date().toISOString()
+    : null;
+  const taskValues = {
     title: template.title,
     description: note || null,
     priority: template.priority,
     status,
     due_at: dueDate ? new Date(`${dueDate}T12:00:00.000Z`).toISOString() : null,
-    completed_at: completed ? new Date().toISOString() : null,
-    created_by: userId,
+    completed_at: completedAt,
     completed_by: completed ? userId : null,
-  }, { onConflict: "organization_id,source,source_reference" });
+    updated_at: new Date().toISOString(),
+  };
+  const mutation = existing
+    ? supabase.from("nexaro_tasks").update(taskValues).eq("id", existing.id).eq("organization_id", organizationId)
+    : supabase.from("nexaro_tasks").insert({
+        ...taskValues,
+        organization_id: organizationId,
+        source: "manual",
+        source_reference: sourceReference,
+        created_by: userId,
+      });
+  const { error } = await mutation;
   if (error) message(organizationId, "error", "No se pudo actualizar el plan del restaurante.");
 
   revalidatePath("/admin");
   revalidatePath(`/admin/empresas/${organizationId}`);
   revalidatePath("/app");
   revalidatePath("/app/hoja-de-ruta");
-  message(organizationId, "success", `Paso «${template.title}» actualizado.`);
+  revalidatePath("/app/trabajo-nexaro");
+  message(organizationId, "success", completed
+    ? `«${template.title}» ya aparece en el historial de trabajo realizado.`
+    : `Paso «${template.title}» actualizado.`);
 }
