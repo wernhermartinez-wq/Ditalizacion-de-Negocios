@@ -8,9 +8,10 @@ import { SubmitButton } from "@/components/auth/submit-button";
 import { dimensionScores } from "@/lib/diagnostics";
 import { loadDiagnosticSnapshot, roadmapFromSnapshot } from "@/lib/diagnostic-snapshots";
 import { roadmapTasks } from "@/lib/roadmap";
+import { isRestaurantRoadmapTask, mergeRestaurantRoadmapTasks, restaurantStatusLabels } from "@/lib/restaurant-roadmap";
 import { createClient } from "@/lib/supabase/server";
 import { workCategories, workCategoryLabel } from "@/lib/work";
-import { addWorkEntry, completeNexaroTask, completeRoadmapTask, reopenNexaroTask, reopenRoadmapTask, validateDiagnostic } from "./actions";
+import { addWorkEntry, completeNexaroTask, completeRoadmapTask, reopenNexaroTask, reopenRoadmapTask, updateRestaurantRoadmapStep, updateWorkEntry, validateDiagnostic } from "./actions";
 
 export const metadata: Metadata = { title: "Empresa · Control Nexaro" };
 
@@ -69,8 +70,10 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
   const memberships = membershipsResult.data ?? [];
   const workEntries = workResult.data ?? [];
   const nexaroTasks = nexaroTasksResult.data ?? [];
-  const pendingNexaroTasks = nexaroTasks.filter((task) => task.status !== "completed" && task.status !== "cancelled");
-  const completedNexaroTasks = nexaroTasks.filter((task) => task.status === "completed");
+  const restaurantSteps = mergeRestaurantRoadmapTasks(nexaroTasks);
+  const operationalTasks = nexaroTasks.filter((task) => !isRestaurantRoadmapTask(task));
+  const pendingNexaroTasks = operationalTasks.filter((task) => task.status !== "completed" && task.status !== "cancelled");
+  const completedNexaroTasks = operationalTasks.filter((task) => task.status === "completed");
   const addWorkEntryForCompany = addWorkEntry.bind(null, organization.id);
 
   return (
@@ -88,12 +91,25 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
       <section className="admin-company-facts">
         <article><Building2 size={18} /><span><small>Empresa</small><strong>{organization.legal_name ?? organization.name}</strong></span></article>
         <article><Globe2 size={18} /><span><small>Sitio web</small><strong>{organization.website ? <a href={organization.website} target="_blank" rel="noreferrer">Abrir sitio</a> : "No registrado"}</strong></span></article>
-        <article><ClipboardList size={18} /><span><small>Tareas pendientes</small><strong>{pendingNexaroTasks.length + tasks.length}</strong></span></article>
+        <article><ClipboardList size={18} /><span><small>Pasos del plan pendientes</small><strong>{restaurantSteps.filter((step) => step.status === "pending" || step.status === "in_progress").length}</strong></span></article>
         <article><CheckCircle2 size={18} /><span><small>Trabajos Nexaro</small><strong>{workEntries.length}</strong></span></article>
       </section>
 
       <div className="admin-company-columns">
         <div className="admin-company-primary">
+          <section className="admin-panel admin-restaurant-plan">
+            <div className="admin-section-title"><div><p>Plan del restaurante</p><h2>Controlar qué hace Nexaro y qué está comprobado</h2></div><span>{restaurantSteps.filter((step) => step.status === "completed").length}/{restaurantSteps.length} realizados</span></div>
+            <p className="admin-plan-intro">El cliente ve estos mismos estados, pero solo Nexaro puede modificarlos. Añade una nota breve para explicar la situación real.</p>
+            <div className="admin-restaurant-steps">{restaurantSteps.map((step) => (
+              <form action={updateRestaurantRoadmapStep.bind(null, organization.id, step.key)} key={step.key}>
+                <div className="admin-restaurant-step-head"><span>{step.stage}</span><div><small>{step.stageTitle}</small><strong>{step.title}</strong></div><b className={`status-${step.status}`}>{restaurantStatusLabels[step.status]}</b></div>
+                <div className="admin-restaurant-step-fields"><label>Estado<select name="status" defaultValue={step.status}><option value="pending">Por preparar</option><option value="in_progress">En curso</option><option value="completed">Comprobado</option><option value="cancelled">No incluido</option></select></label><label>Fecha prevista<input name="dueDate" type="date" defaultValue={step.dueAt?.slice(0, 10) ?? ""} /></label></div>
+                <label className="admin-restaurant-note">Actualización visible para el restaurante<textarea name="note" rows={2} maxLength={1200} defaultValue={step.note ?? ""} placeholder="Ej. Ficha de Google corregida; esperamos validación de las nuevas fotografías." /></label>
+                <div className="admin-restaurant-step-footer"><small>Prueba esperada: {step.evidence}</small><SubmitButton pendingLabel="Guardando…">Guardar estado</SubmitButton></div>
+              </form>
+            ))}</div>
+          </section>
+
           {diagnostic?.status === "completed" && (
             <section className="admin-panel admin-diagnostic-review">
               <div className="admin-section-title"><div><p>Revisión requerida</p><h2>Validar diagnóstico enviado</h2></div><span>Resultado provisional</span></div>
@@ -122,7 +138,7 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
           <section className="admin-panel">
             <div className="admin-section-title"><div><p>Historial</p><h2>Trabajo realizado por Nexaro</h2></div><span>{workEntries.length} registros</span></div>
             {workEntries.length ? <div className="admin-work-timeline">{workEntries.map((entry) => (
-              <article key={entry.id}><span className="admin-work-date"><CalendarDays size={15} />{formatDate(entry.completed_on)}</span><div><small>{workCategoryLabel(entry.category)}</small><h3>{entry.title}</h3>{entry.description && <p>{entry.description}</p>}</div></article>
+              <article key={entry.id}><span className="admin-work-date"><CalendarDays size={15} />{formatDate(entry.completed_on)}</span><div><small>{workCategoryLabel(entry.category)}</small><h3>{entry.title}</h3>{entry.description && <p>{entry.description}</p>}<details className="admin-work-edit"><summary>Editar trabajo</summary><form action={updateWorkEntry.bind(null, organization.id, entry.id)}><label>Título<input name="title" required minLength={3} maxLength={160} defaultValue={entry.title} /></label><label>Categoría<select name="category" required defaultValue={entry.category}>{workCategories.map((category) => <option value={category.value} key={category.value}>{category.label}</option>)}</select></label><label>Fecha de finalización<input name="completedOn" type="date" required defaultValue={entry.completed_on} /></label><label className="wide">Detalle<textarea name="description" maxLength={1200} rows={3} defaultValue={entry.description ?? ""} /></label><div className="wide"><SubmitButton pendingLabel="Guardando…">Guardar cambios</SubmitButton></div></form></details></div></article>
             ))}</div> : <div className="admin-empty compact"><CheckCircle2 size={22} /><strong>Aún no hay trabajos registrados.</strong><span>Usa el formulario para documentar la primera intervención.</span></div>}
           </section>
 

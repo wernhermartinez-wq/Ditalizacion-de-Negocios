@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Dashboard } from "@/components/app/dashboard";
 import { getCurrentOrganization } from "@/lib/organizations";
+import { mergeRestaurantRoadmapTasks } from "@/lib/restaurant-roadmap";
 import { createClient } from "@/lib/supabase/server";
-import { dimensionScores } from "@/lib/diagnostics";
-import { dimensionsFromSnapshot, loadDiagnosticSnapshot, roadmapFromSnapshot } from "@/lib/diagnostic-snapshots";
-import { buildRoadmap, roadmapTasks } from "@/lib/roadmap";
-import { redirect } from "next/navigation";
 
 export const metadata: Metadata = { title: "Inicio" };
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
@@ -15,52 +14,10 @@ export default async function DashboardPage() {
   if (!userId) redirect("/login");
   const organization = await getCurrentOrganization(supabase, userId);
   if (!organization) redirect("/app/perfil?bienvenida=1");
-
-  const questionnaireResult = await supabase
-    .from("diagnostic_questionnaires")
-    .select("id")
-    .eq("is_active", true)
-    .maybeSingle();
-  const questionnaireId = questionnaireResult.data?.id;
-  if (!questionnaireId) return <Dashboard organizationName={organization.name} diagnostic={null} tasks={[]} />;
-
-  const [questionsResult, diagnosticResult] = await Promise.all([
-    supabase.from("diagnostic_questions").select("*").eq("questionnaire_id", questionnaireId).order("position"),
-    supabase
-      .from("diagnostics")
-      .select("*")
-      .eq("organization_id", organization.id)
-      .eq("questionnaire_id", questionnaireId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+  const [tasksResult, workResult] = await Promise.all([
+    supabase.from("nexaro_tasks").select("*").eq("organization_id", organization.id).order("created_at"),
+    supabase.from("nexaro_work_entries").select("id", { count: "exact", head: true }).eq("organization_id", organization.id),
   ]);
-  const diagnosticRow = diagnosticResult.data;
-  const [responsesResult, completionsResult] = diagnosticRow
-    ? await Promise.all([
-        supabase.from("diagnostic_responses").select("*").eq("diagnostic_id", diagnosticRow.id),
-        supabase.from("roadmap_task_completions").select("task_key").eq("diagnostic_id", diagnosticRow.id),
-      ])
-    : [{ data: [], error: null }, { data: [], error: null }];
-  const questions = questionsResult.data ?? [];
-  const responses = responsesResult.data ?? [];
-  const completedTaskKeys = new Set((completionsResult.data ?? []).map((completion) => completion.task_key));
-  const isSubmitted = diagnosticRow?.status === "completed" || diagnosticRow?.status === "validated";
-  const snapshot = diagnosticRow?.status === "validated" ? await loadDiagnosticSnapshot(supabase, diagnosticRow.id) : null;
-  const roadmap = snapshot ? roadmapFromSnapshot(snapshot.itemRows) : isSubmitted ? buildRoadmap(questions, responses) : [];
-  const tasks = roadmapTasks(roadmap).filter((task) => !completedTaskKeys.has(task.id)).slice(0, 3);
-
-  return (
-    <Dashboard
-      organizationName={organization.name}
-      tasks={tasks}
-      diagnostic={{
-        status: diagnosticRow?.status ?? "not_started",
-        score: diagnosticRow?.provisional_score ?? null,
-        answered: responses.length,
-        total: questions.length,
-        dimensions: snapshot ? dimensionsFromSnapshot(snapshot.scoreRows) : dimensionScores(questions, responses),
-      }}
-    />
-  );
+  if (tasksResult.error) throw new Error("No se pudo cargar el plan del restaurante.");
+  return <Dashboard organizationName={organization.name} steps={mergeRestaurantRoadmapTasks(tasksResult.data ?? [])} workCount={workResult.count ?? 0} />;
 }
