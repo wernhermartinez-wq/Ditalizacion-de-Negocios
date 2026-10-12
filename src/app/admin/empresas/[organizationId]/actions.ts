@@ -7,6 +7,7 @@ import { buildDiagnosticSnapshot, DIAGNOSTIC_FORMULA_VERSION, loadDiagnosticSnap
 import { roadmapTasks } from "@/lib/roadmap";
 import { getRestaurantRoadmapTemplate, restaurantRoadmapTemplates, restaurantTaskReference } from "@/lib/restaurant-roadmap";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { workCategories } from "@/lib/work";
 
 function field(formData: FormData, key: string, maxLength: number) {
@@ -15,6 +16,34 @@ function field(formData: FormData, key: string, maxLength: number) {
 
 function message(organizationId: string, type: "error" | "success", text: string): never {
   redirect(`/admin/empresas/${organizationId}?${new URLSearchParams({ [type]: text })}`);
+}
+
+export async function resetMemberPassword(organizationId: string, memberUserId: string, formData: FormData) {
+  if (!/^[0-9a-f-]{36}$/i.test(organizationId) || !/^[0-9a-f-]{36}$/i.test(memberUserId)) redirect("/admin");
+  const supabase = await createClient();
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const adminUserId = typeof claimsData?.claims?.sub === "string" ? claimsData.claims.sub : null;
+  if (claimsError || !adminUserId) redirect("/login");
+  if (!(await isPlatformAdmin(supabase, adminUserId))) redirect("/app");
+
+  const password = String(formData.get("password") ?? "");
+  const confirmation = String(formData.get("passwordConfirmation") ?? "");
+  if (password.length < 8 || password.length > 128) message(organizationId, "error", "La nueva contraseña debe tener entre 8 y 128 caracteres.");
+  if (password !== confirmation) message(organizationId, "error", "Las contraseñas nuevas no coinciden.");
+
+  const { data: membership, error: membershipError } = await supabase
+    .from("organization_memberships")
+    .select("user_id")
+    .eq("organization_id", organizationId)
+    .eq("user_id", memberUserId)
+    .maybeSingle();
+  if (membershipError || !membership) message(organizationId, "error", "El usuario no pertenece a este restaurante.");
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(memberUserId, { password });
+  if (error) message(organizationId, "error", "No se pudo cambiar la contraseña del usuario.");
+
+  message(organizationId, "success", "Contraseña actualizada. Ya puedes entregar el nuevo acceso al usuario.");
 }
 
 export async function addWorkEntry(organizationId: string, formData: FormData) {

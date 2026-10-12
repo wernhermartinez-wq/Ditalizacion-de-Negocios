@@ -153,6 +153,16 @@
 .admin-member-list strong { font-size: 0.7rem; }
 .admin-member-list small { margin-top: 0.2rem; display: flex; gap: 0.25rem; align-items: center; color: var(--ink-600); font-size: 0.58rem; }
 .admin-member-list b { padding: 0.25rem 0.4rem; border-radius: 2rem; color: #247456; background: #e7f5ee; font-size: 0.55rem; }
+.admin-password-reset { grid-column: 1 / -1; }
+.admin-password-reset summary { width: fit-content; display: flex; gap: 0.35rem; align-items: center; color: var(--accent); font-size: 0.62rem; font-weight: 750; cursor: pointer; list-style: none; }
+.admin-password-reset summary::-webkit-details-marker { display: none; }
+.admin-password-reset form { margin-top: 0.7rem; padding: 0.8rem; display: grid; gap: 0.7rem; border: 1px solid var(--line); border-radius: 0.65rem; background: #fffaf3; }
+.admin-password-reset form > p { margin: 0; color: var(--ink-600); font-size: 0.62rem; line-height: 1.5; }
+.admin-password-reset .field { margin: 0; }
+.admin-password-reset .field label { display: block; margin-bottom: 0.3rem; font-size: 0.62rem; font-weight: 700; }
+.admin-password-reset .field input { width: 100%; min-height: 2.7rem; padding: 0.65rem 2.8rem 0.65rem 0.7rem; border: 1px solid var(--line); border-radius: 0.5rem; color: var(--ink-950); background: var(--surface); }
+.admin-password-reset .field > small { margin-top: 0.25rem; color: var(--ink-600); font-size: 0.56rem; }
+.admin-password-reset form > button { min-height: 2.6rem; padding: 0.65rem 0.8rem; border: 0; border-radius: 0.5rem; color: white; background: var(--accent); font-size: 0.62rem; font-weight: 750; cursor: pointer; }
 .admin-diagnostic-review { padding-bottom: 1rem; border-color: #e2a27b; background: #fff8ef; }
 .admin-diagnostic-review > p { margin: 0; padding: 1rem 1.2rem 0; color: var(--ink-600); font-size: 0.68rem; line-height: 1.55; }
 .admin-diagnostic-preview { padding: 1rem 1.2rem; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.5rem; }

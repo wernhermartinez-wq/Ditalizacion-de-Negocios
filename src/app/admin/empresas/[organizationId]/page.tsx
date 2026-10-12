@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Building2, CalendarDays, CheckCircle2, ClipboardList, Globe2, Mail, RotateCcw, ScanSearch, UserRound } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, CheckCircle2, ClipboardList, Globe2, KeyRound, Mail, RotateCcw, ScanSearch, UserRound } from "lucide-react";
 import { AuthMessage } from "@/components/auth/message";
+import { PasswordField } from "@/components/auth/password-field";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { RoadmapSelectionForm } from "@/components/admin/roadmap-selection-form";
 import { isRestaurantRoadmapTask, mergeRestaurantRoadmapTasks, restaurantRoadmapStages, restaurantStatusLabels } from "@/lib/restaurant-roadmap";
 import { createClient } from "@/lib/supabase/server";
 import { workCategories, workCategoryLabel } from "@/lib/work";
-import { addWorkEntry, assignRestaurantRoadmapSteps, completeNexaroTask, reopenNexaroTask, updateRestaurantRoadmapStep, updateWorkEntry } from "./actions";
+import { addWorkEntry, assignRestaurantRoadmapSteps, completeNexaroTask, reopenNexaroTask, resetMemberPassword, updateRestaurantRoadmapStep, updateWorkEntry } from "./actions";
 
 export const metadata: Metadata = { title: "Empresa · Control Nexaro" };
 
@@ -146,7 +147,7 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
             <div className="admin-member-list">{memberships.map((membership) => {
               const user = users.find((item) => item.user_id === membership.user_id);
               const profile = profiles.find((item) => item.user_id === membership.user_id);
-              return <article key={membership.user_id}><UserRound size={17} /><span><strong>{profile?.full_name ?? "Sin nombre"}</strong><small><Mail size={12} /> {user?.email ?? "Sin correo"}</small></span><b>{membership.role === "owner" ? "Propietario" : membership.role}</b></article>;
+              return <article key={membership.user_id}><UserRound size={17} /><span><strong>{profile?.full_name ?? "Sin nombre"}</strong><small><Mail size={12} /> {user?.email ?? "Sin correo"}</small></span><b>{membership.role === "owner" ? "Propietario" : membership.role}</b><details className="admin-password-reset"><summary><KeyRound size={14} /> Cambiar contraseña</summary><form action={resetMemberPassword.bind(null, organization.id, membership.user_id)}><p>Define una clave nueva sin enviar correo. Entrégala únicamente al usuario correspondiente.</p><PasswordField id={`password-${membership.user_id}`} name="password" label="Nueva contraseña" autoComplete="new-password" minLength={8} help="Mínimo 8 caracteres." /><PasswordField id={`password-confirmation-${membership.user_id}`} name="passwordConfirmation" label="Repite la contraseña" autoComplete="new-password" minLength={8} /><SubmitButton pendingLabel="Cambiando…">Guardar nueva contraseña</SubmitButton></form></details></article>;
             })}</div>
           </section>
         </aside>
