@@ -30,10 +30,11 @@ export default async function RoadmapPage() {
 
       {steps.length ? <section className="restaurant-route" aria-label="Recorrido de mejora del restaurante">
         <header><div><p className="eyebrow">{progress.implementationComplete ? "Mejora permanente" : "Tu recorrido activo"}</p><h2>{current ? `Ahora: ${current.title}` : progress.implementationComplete ? "Implantación completada; seguimos mejorando" : "Recorrido comprobado"}</h2></div><span>{steps.length} {steps.length === 1 ? "acción visible" : "acciones visibles"}</span></header>
-        <div className="restaurant-route-line">{steps.map((step) => {
+        <div className="restaurant-route-line">{steps.map((step, index) => {
           const isCurrent = current?.key === step.key;
           const isComplete = step.status === "completed";
-          return <article className={`${isCurrent ? "is-current" : ""} ${isComplete ? "is-complete" : ""}`} key={step.key}>
+          const startsStage = index === 0 || steps[index - 1]?.stage !== step.stage;
+          return <article id={startsStage ? `fase-${step.stage}` : undefined} className={`${isCurrent ? "is-current" : ""} ${isComplete ? "is-complete" : ""}`} key={step.key}>
             <div className="restaurant-route-marker">{isComplete ? <Check size={18} /> : step.code}</div>
             <div className="restaurant-route-card">
               <div className="restaurant-route-meta"><span>{step.code} · {step.stageTitle}</span><span className={`restaurant-status status-${step.status}`}>{restaurantStatusLabels[step.status]}</span></div>
