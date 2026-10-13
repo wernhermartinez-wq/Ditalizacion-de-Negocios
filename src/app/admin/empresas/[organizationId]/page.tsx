@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Building2, CalendarDays, CheckCircle2, ClipboardList, Globe2, KeyRound, Mail, RotateCcw, ScanSearch, UserRound } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, CheckCircle2, Circle, CircleDot, ClipboardList, Globe2, KeyRound, Mail, RotateCcw, ScanSearch, UserRound } from "lucide-react";
 import { AuthMessage } from "@/components/auth/message";
 import { PasswordField } from "@/components/auth/password-field";
 import { SubmitButton } from "@/components/auth/submit-button";
@@ -66,7 +66,7 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
       <section className="admin-company-facts">
         <article><Building2 size={18} /><span><small>Empresa</small><strong>{organization.legal_name ?? organization.name}</strong></span></article>
         <article><Globe2 size={18} /><span><small>Sitio web</small><strong>{organization.website ? <a href={organization.website} target="_blank" rel="noreferrer">Abrir sitio</a> : "No registrado"}</strong></span></article>
-        <article><ClipboardList size={18} /><span><small>Pasos del plan pendientes</small><strong>{restaurantSteps.filter((step) => step.status === "pending" || step.status === "in_progress").length}</strong></span></article>
+        <article><ClipboardList size={18} /><span><small>Pasos del plan pendientes</small><strong>{restaurantSteps.filter((step) => step.stored && (step.status === "pending" || step.status === "in_progress")).length}</strong></span></article>
         <article><CheckCircle2 size={18} /><span><small>Trabajos Nexaro</small><strong>{workTimeline.length}</strong></span></article>
       </section>
 
@@ -75,18 +75,20 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
           <AuthMessage error={messages.error} success={messages.success} />
           <section className="admin-panel admin-plan-catalog admin-restaurant-plan">
             <div className="admin-section-title"><div><p>Plan del restaurante</p><h2>Fases y seguimiento de Nexaro</h2></div><span>{restaurantSteps.filter((step) => step.stored && step.status !== "cancelled").length}/{restaurantSteps.length} añadidos</span></div>
-            <p className="admin-plan-intro">Las fases siempre permanecen en el expediente de {organization.name}. Los pasos añadidos quedan contraídos y marcados; ábrelos sólo cuando necesites actualizar su estado.</p>
+            <p className="admin-plan-intro">“En el recorrido” significa que el paso está asignado al restaurante. Sólo se muestra en verde cuando Nexaro lo marca como comprobado.</p>
             <div className="admin-plan-checklist">{restaurantRoadmapStages.map((stage) => {
               const stageSteps = restaurantSteps.filter((step) => step.stage === stage.stage);
               const assignedCount = stageSteps.filter((step) => step.stored && step.status !== "cancelled").length;
-              const fullyAssigned = assignedCount === stageSteps.length;
-              return <details className={`admin-plan-checklist-phase ${fullyAssigned ? "is-assigned" : ""}`} key={stage.stage} open={!fullyAssigned}>
-                <summary><span className="admin-plan-stage">{fullyAssigned ? <CheckCircle2 size={16} /> : stage.stage}</span><div><small>Fase {stage.stage} · {stage.period}</small><strong>{stage.title}</strong></div><b>{assignedCount}/{stageSteps.length} añadidos</b></summary>
+              const completedCount = stageSteps.filter((step) => step.stored && step.status === "completed").length;
+              const fullyCompleted = assignedCount > 0 && completedCount === assignedCount;
+              const active = !fullyCompleted && stageSteps.some((step) => step.stored && (step.status === "completed" || step.status === "in_progress"));
+              return <details className={`admin-plan-checklist-phase ${fullyCompleted ? "is-complete" : ""} ${active ? "is-active" : ""}`} key={stage.stage} open>
+                <summary><span className="admin-plan-stage">{fullyCompleted ? <CheckCircle2 size={16} /> : stage.stage}</span><div><small>Fase {stage.stage} · {stage.period}</small><strong>{stage.title}</strong></div><b><span>{assignedCount}/{stageSteps.length} en el recorrido</span><em>{completedCount}/{assignedCount || stageSteps.length} comprobados</em></b></summary>
                 <div>{stageSteps.map((step) => {
                   const assigned = step.stored && step.status !== "cancelled";
                   if (!assigned) return <label key={step.key}><input form="restaurant-roadmap-selection" type="checkbox" name="stepKey" value={step.key} /><span className="admin-plan-checklist-detail"><span className="admin-plan-item-title"><b>{step.code}</b><strong>{step.title}</strong></span><p>{step.description}</p><dl><div><dt>Necesitamos del restaurante</dt><dd>{step.restaurantInput}</dd></div><div><dt>Acción de Nexaro</dt><dd>{step.nexaroAction}</dd></div><div><dt>Comprobación</dt><dd>{step.evidence}</dd></div></dl></span></label>;
                   return <details className={`admin-plan-assigned-step status-${step.status}`} key={step.key}>
-                    <summary><CheckCircle2 size={17} /><span><small>{step.code} · {step.stageTitle}</small><strong>{step.title}</strong></span><b>{restaurantStatusLabels[step.status]}</b></summary>
+                    <summary>{step.status === "completed" ? <CheckCircle2 size={17} /> : step.status === "in_progress" ? <CircleDot size={17} /> : <Circle size={17} />}<span><small>{step.code} · {step.stageTitle}</small><strong>{step.title}</strong></span><b>{restaurantStatusLabels[step.status]}</b></summary>
                     <div className="admin-plan-card-detail"><p>{step.description}</p><dl><div><dt>Necesitamos del restaurante</dt><dd>{step.restaurantInput}</dd></div><div><dt>Acción de Nexaro</dt><dd>{step.nexaroAction}</dd></div><div><dt>Comprobación</dt><dd>{step.evidence}</dd></div></dl></div>
                     <div className="admin-plan-editor"><form action={updateRestaurantRoadmapStep.bind(null, organization.id, step.key)}>
                       <div className="admin-restaurant-step-fields"><label>Estado<select name="status" defaultValue={step.status}><option value="pending">Pendiente</option><option value="in_progress">En curso</option><option value="completed">Comprobado</option><option value="cancelled">No incluido</option></select></label><label>Fecha prevista<input name="dueDate" type="date" defaultValue={step.dueAt?.slice(0, 10) ?? ""} /></label><label>Fecha realizada<input name="completedDate" type="date" defaultValue={step.completedAt?.slice(0, 10) ?? new Date().toISOString().slice(0, 10)} /></label></div>
