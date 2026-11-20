@@ -4,11 +4,13 @@ import { calculateVisibilityMetrics } from "./metrics";
 describe("visibility metrics", () => {
   it("expone numerador, denominador y respuestas trazables", () => {
     const metrics = calculateVisibilityMetrics([
-      { id: "r1", promptId: "p1", status: "completed", hasClientMention: true, competitorMentions: 1, clientCitations: 1, authorityCitations: 0, positiveClientMention: true },
-      { id: "r2", promptId: "p2", status: "completed", hasClientMention: false, competitorMentions: 2, clientCitations: 0, authorityCitations: 1, positiveClientMention: false },
+      { id: "r1", promptId: "p1", status: "completed", hasClientMention: true, competitorMentions: 1, clientCitations: 1, authorityCitations: 0, positiveClientMention: true, orderedPosition: 2, firstMention: null },
+      { id: "r2", promptId: "p2", status: "completed", hasClientMention: false, competitorMentions: 2, clientCitations: 0, authorityCitations: 1, positiveClientMention: false, orderedPosition: null, firstMention: true },
       { id: "r3", promptId: "p3", status: "failed", hasClientMention: false, competitorMentions: 0, clientCitations: 0, authorityCitations: 0, positiveClientMention: false },
     ]);
     expect(metrics.presence).toEqual({ value: 50, numerator: 1, denominator: 2, responseIds: ["r1"] });
+    expect(metrics.orderedPosition.value).toBe(2);
+    expect(metrics.firstMention.value).toBe(100);
     expect(metrics.coverage.value).toBe(50);
     expect(metrics.shareOfVoice.value).toBe(25);
     expect(metrics.authority.responseIds).toEqual(["r2"]);

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Building2, CheckCircle2 } from "lucide-react";
+import { Building2, CheckCircle2, Fingerprint } from "lucide-react";
 import { AuthMessage } from "@/components/auth/message";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { getCurrentOrganization } from "@/lib/organizations";
@@ -24,6 +24,24 @@ export default async function CompanyProfilePage({ searchParams }: PageProps) {
     supabase.from("profiles").select("full_name").eq("user_id", userId).maybeSingle(),
     searchParams,
   ]);
+
+  let validatedIdentity = null;
+  if (organization) {
+    const { data: auditCase } = await supabase
+      .from("entity_audit_cases")
+      .select("current_identity_version_id")
+      .eq("organization_id", organization.id)
+      .maybeSingle();
+    if (auditCase?.current_identity_version_id) {
+      const { data: identity } = await supabase
+        .from("entity_identity_versions")
+        .select("commercial_name, legal_name, website_url, address_line_1, address_line_2, postal_code, city, region, country_code, phone, opening_hours, categories, specialties, services, menu_url, reservation_url, contact_url, official_profiles, version_number, validated_at")
+        .eq("id", auditCase.current_identity_version_id)
+        .eq("status", "validated")
+        .maybeSingle();
+      validatedIdentity = identity;
+    }
+  }
 
   return (
     <main className="page-content company-page">
@@ -63,6 +81,20 @@ export default async function CompanyProfilePage({ searchParams }: PageProps) {
           <div className="company-form-actions"><p>Los datos personales y de facturación se gestionan desde Cuenta.</p><SubmitButton pendingLabel="Guardando…">{organization ? "Guardar cambios" : "Crear mi restaurante"}</SubmitButton></div>
         </form>
       </section>
+      {validatedIdentity ? <section className="card official-identity-card" aria-labelledby="official-identity-title">
+        <div className="company-form-intro"><span className="state-visual"><Fingerprint size={24} /></span><div><h2 id="official-identity-title">Identidad oficial validada</h2><p>Versión {validatedIdentity.version_number}. Estos son los datos que Nexaro ha comprobado.</p></div></div>
+        <dl className="official-identity-grid">
+          <div><dt>Nombre comercial</dt><dd>{validatedIdentity.commercial_name}</dd></div>
+          {validatedIdentity.legal_name ? <div><dt>Razón social</dt><dd>{validatedIdentity.legal_name}</dd></div> : null}
+          {validatedIdentity.website_url ? <div><dt>Sitio web</dt><dd><a href={validatedIdentity.website_url} target="_blank" rel="noreferrer">{validatedIdentity.website_url}</a></dd></div> : null}
+          {validatedIdentity.phone ? <div><dt>Teléfono</dt><dd>{validatedIdentity.phone}</dd></div> : null}
+          {validatedIdentity.address_line_1 ? <div><dt>Dirección</dt><dd>{[validatedIdentity.address_line_1, validatedIdentity.address_line_2, validatedIdentity.postal_code, validatedIdentity.city, validatedIdentity.region].filter(Boolean).join(", ")}</dd></div> : null}
+          {validatedIdentity.categories.length ? <div><dt>Categorías</dt><dd>{validatedIdentity.categories.join(", ")}</dd></div> : null}
+          {validatedIdentity.services.length ? <div><dt>Servicios</dt><dd>{validatedIdentity.services.join(", ")}</dd></div> : null}
+          {validatedIdentity.specialties.length ? <div><dt>Especialidades</dt><dd>{validatedIdentity.specialties.join(", ")}</dd></div> : null}
+        </dl>
+        <p className="official-identity-note"><CheckCircle2 size={16} /> Validada por Nexaro. Las fuentes y observaciones internas no forman parte de esta vista.</p>
+      </section> : null}
     </main>
   );
 }

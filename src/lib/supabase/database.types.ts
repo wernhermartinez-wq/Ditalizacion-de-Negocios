@@ -14,6 +14,781 @@ export type Database = {
   }
   public: {
     Tables: {
+      entity_audit_cases: {
+        Row: {
+          activated_at: string
+          activated_by: string | null
+          activation_source: string
+          created_at: string
+          current_identity_version_id: string | null
+          id: string
+          organization_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          activated_at?: string
+          activated_by?: string | null
+          activation_source: string
+          created_at?: string
+          current_identity_version_id?: string | null
+          id?: string
+          organization_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          activated_at?: string
+          activated_by?: string | null
+          activation_source?: string
+          created_at?: string
+          current_identity_version_id?: string | null
+          id?: string
+          organization_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_audit_cases_current_identity_version_fkey"
+            columns: ["current_identity_version_id"]
+            isOneToOne: false
+            referencedRelation: "entity_identity_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_audit_cases_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_audit_campaigns: {
+        Row: {
+          campaign_number: number
+          case_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          custom_question_set_id: string | null
+          id: string
+          idempotency_key: string
+          identity_version_id: string
+          organization_id: string
+          query_budget: number
+          requested_providers: string[]
+          standard_question_set_id: string
+          started_at: string | null
+          status: string
+          visibility_project_id: string
+          visibility_run_id: string | null
+        }
+        Insert: {
+          campaign_number: number
+          case_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          custom_question_set_id?: string | null
+          id?: string
+          idempotency_key: string
+          identity_version_id: string
+          organization_id: string
+          query_budget?: number
+          requested_providers?: string[]
+          standard_question_set_id: string
+          started_at?: string | null
+          status?: string
+          visibility_project_id: string
+          visibility_run_id?: string | null
+        }
+        Update: {
+          campaign_number?: number
+          case_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          custom_question_set_id?: string | null
+          id?: string
+          idempotency_key?: string
+          identity_version_id?: string
+          organization_id?: string
+          query_budget?: number
+          requested_providers?: string[]
+          standard_question_set_id?: string
+          started_at?: string | null
+          status?: string
+          visibility_project_id?: string
+          visibility_run_id?: string | null
+        }
+        Relationships: []
+      }
+      entity_audit_evaluation_budgets: {
+        Row: {
+          budget_usd: number
+          campaign_id: string
+          created_at: string
+          organization_id: string
+          reserved_usd: number
+          spent_usd: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          budget_usd?: number
+          campaign_id: string
+          created_at?: string
+          organization_id: string
+          reserved_usd?: number
+          spent_usd?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          budget_usd?: number
+          campaign_id?: string
+          created_at?: string
+          organization_id?: string
+          reserved_usd?: number
+          spent_usd?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      entity_audit_evaluation_runs: {
+        Row: {
+          actual_cost_usd: number | null
+          campaign_id: string
+          completed_at: string | null
+          cost_basis: string | null
+          created_at: string
+          created_by: string
+          error_message: string | null
+          estimated_cost_usd: number
+          id: string
+          idempotency_key: string
+          identity_version_id: string
+          input_tokens: number | null
+          model: string
+          organization_id: string
+          output_tokens: number | null
+          started_at: string
+          status: string
+        }
+        Insert: {
+          actual_cost_usd?: number | null
+          campaign_id: string
+          completed_at?: string | null
+          cost_basis?: string | null
+          created_at?: string
+          created_by: string
+          error_message?: string | null
+          estimated_cost_usd: number
+          id?: string
+          idempotency_key: string
+          identity_version_id: string
+          input_tokens?: number | null
+          model: string
+          organization_id: string
+          output_tokens?: number | null
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          actual_cost_usd?: number | null
+          campaign_id?: string
+          completed_at?: string | null
+          cost_basis?: string | null
+          created_at?: string
+          created_by?: string
+          error_message?: string | null
+          estimated_cost_usd?: number
+          id?: string
+          idempotency_key?: string
+          identity_version_id?: string
+          input_tokens?: number | null
+          model?: string
+          organization_id?: string
+          output_tokens?: number | null
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      entity_audit_factual_claims: {
+        Row: {
+          assertion_text: string
+          campaign_id: string
+          claim_fingerprint: string
+          classification: string
+          created_at: string
+          evaluation_run_id: string
+          evidence_text: string
+          field_key: string
+          finding_key: string | null
+          id: string
+          identity_evidence: Json
+          organization_id: string
+          original_response: string
+          provider: string
+          response_id: string
+        }
+        Insert: {
+          assertion_text: string
+          campaign_id: string
+          claim_fingerprint: string
+          classification: string
+          created_at?: string
+          evaluation_run_id: string
+          evidence_text: string
+          field_key: string
+          finding_key?: string | null
+          id?: string
+          identity_evidence?: Json
+          organization_id: string
+          original_response: string
+          provider: string
+          response_id: string
+        }
+        Update: {
+          assertion_text?: string
+          campaign_id?: string
+          claim_fingerprint?: string
+          classification?: string
+          created_at?: string
+          evaluation_run_id?: string
+          evidence_text?: string
+          field_key?: string
+          finding_key?: string | null
+          id?: string
+          identity_evidence?: Json
+          organization_id?: string
+          original_response?: string
+          provider?: string
+          response_id?: string
+        }
+        Relationships: []
+      }
+      entity_audit_findings: {
+        Row: {
+          campaign_id: string
+          classification: string
+          created_at: string
+          evaluation_run_id: string
+          evidence_summary: string
+          field_key: string
+          finding_key: string
+          id: string
+          organization_id: string
+          provider_count: number
+          response_count: number
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          classification: string
+          created_at?: string
+          evaluation_run_id: string
+          evidence_summary: string
+          field_key: string
+          finding_key: string
+          id?: string
+          organization_id: string
+          provider_count?: number
+          response_count?: number
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          summary: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          classification?: string
+          created_at?: string
+          evaluation_run_id?: string
+          evidence_summary?: string
+          field_key?: string
+          finding_key?: string
+          id?: string
+          organization_id?: string
+          provider_count?: number
+          response_count?: number
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      entity_audit_finding_reviews: {
+        Row: {
+          finding_id: string
+          internal_note: string | null
+          organization_id: string
+          reviewed_at: string
+          reviewed_by: string
+        }
+        Insert: {
+          finding_id: string
+          internal_note?: string | null
+          organization_id: string
+          reviewed_at?: string
+          reviewed_by: string
+        }
+        Update: {
+          finding_id?: string
+          internal_note?: string | null
+          organization_id?: string
+          reviewed_at?: string
+          reviewed_by?: string
+        }
+        Relationships: []
+      }
+      entity_audit_intervention_proposals: {
+        Row: {
+          client_summary: string | null
+          client_visible: boolean
+          created_at: string
+          created_by: string
+          expected_result: string
+          hypothesis: string | null
+          id: string
+          internal_note: string | null
+          linked_at: string | null
+          linked_by: string | null
+          linked_task_id: string | null
+          organization_id: string
+          phase: number
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          suggested_action: string
+          updated_at: string
+          verified_problem: string
+        }
+        Insert: {
+          client_summary?: string | null
+          client_visible?: boolean
+          created_at?: string
+          created_by: string
+          expected_result: string
+          hypothesis?: string | null
+          id?: string
+          internal_note?: string | null
+          linked_at?: string | null
+          linked_by?: string | null
+          linked_task_id?: string | null
+          organization_id: string
+          phase: number
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          suggested_action: string
+          updated_at?: string
+          verified_problem: string
+        }
+        Update: {
+          client_summary?: string | null
+          client_visible?: boolean
+          created_at?: string
+          created_by?: string
+          expected_result?: string
+          hypothesis?: string | null
+          id?: string
+          internal_note?: string | null
+          linked_at?: string | null
+          linked_by?: string | null
+          linked_task_id?: string | null
+          organization_id?: string
+          phase?: number
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          suggested_action?: string
+          updated_at?: string
+          verified_problem?: string
+        }
+        Relationships: []
+      }
+      entity_audit_proposal_findings: {
+        Row: {
+          campaign_id: string
+          classification: string
+          created_at: string
+          evidence_snapshot: string
+          finding_id: string
+          identity_version_id: string
+          organization_id: string
+          proposal_id: string
+          verified_fact: string
+        }
+        Insert: {
+          campaign_id: string
+          classification: string
+          created_at?: string
+          evidence_snapshot: string
+          finding_id: string
+          identity_version_id: string
+          organization_id: string
+          proposal_id: string
+          verified_fact: string
+        }
+        Update: {
+          campaign_id?: string
+          classification?: string
+          created_at?: string
+          evidence_snapshot?: string
+          finding_id?: string
+          identity_version_id?: string
+          organization_id?: string
+          proposal_id?: string
+          verified_fact?: string
+        }
+        Relationships: []
+      }
+      entity_audit_campaign_questions: {
+        Row: {
+          campaign_id: string
+          category: string
+          created_at: string
+          id: string
+          position: number
+          question_text: string
+          source_question_id: string
+          source_type: string
+          visibility_prompt_id: string
+        }
+        Insert: {
+          campaign_id: string
+          category: string
+          created_at?: string
+          id?: string
+          position: number
+          question_text: string
+          source_question_id: string
+          source_type: string
+          visibility_prompt_id: string
+        }
+        Update: {
+          campaign_id?: string
+          category?: string
+          created_at?: string
+          id?: string
+          position?: number
+          question_text?: string
+          source_question_id?: string
+          source_type?: string
+          visibility_prompt_id?: string
+        }
+        Relationships: []
+      }
+      entity_audit_question_sets: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string | null
+          set_type: string
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string | null
+          set_type: string
+          version_number: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string | null
+          set_type?: string
+          version_number?: number
+        }
+        Relationships: []
+      }
+      entity_audit_questions: {
+        Row: {
+          category: string
+          code: string
+          country: string
+          created_at: string
+          id: string
+          language: string
+          position: number
+          prompt_template: string
+          question_set_id: string
+        }
+        Insert: {
+          category: string
+          code: string
+          country?: string
+          created_at?: string
+          id?: string
+          language?: string
+          position: number
+          prompt_template: string
+          question_set_id: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          country?: string
+          created_at?: string
+          id?: string
+          language?: string
+          position?: number
+          prompt_template?: string
+          question_set_id?: string
+        }
+        Relationships: []
+      }
+      entity_identity_versions: {
+        Row: {
+          address_line_1: string | null
+          address_line_2: string | null
+          case_id: string
+          categories: string[]
+          city: string | null
+          commercial_name: string
+          contact_url: string | null
+          country_code: string
+          created_at: string
+          created_by: string | null
+          domain: string | null
+          external_identifiers: Json
+          id: string
+          latitude: number | null
+          legal_name: string | null
+          longitude: number | null
+          menu_url: string | null
+          name_variants: string[]
+          official_profiles: Json
+          opening_hours: Json
+          phone: string | null
+          postal_code: string | null
+          region: string | null
+          reservation_url: string | null
+          services: string[]
+          specialties: string[]
+          status: string
+          updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+          validation_note: string | null
+          version_number: number
+          website_url: string | null
+        }
+        Insert: {
+          address_line_1?: string | null
+          address_line_2?: string | null
+          case_id: string
+          categories?: string[]
+          city?: string | null
+          commercial_name: string
+          contact_url?: string | null
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          domain?: string | null
+          external_identifiers?: Json
+          id?: string
+          latitude?: number | null
+          legal_name?: string | null
+          longitude?: number | null
+          menu_url?: string | null
+          name_variants?: string[]
+          official_profiles?: Json
+          opening_hours?: Json
+          phone?: string | null
+          postal_code?: string | null
+          region?: string | null
+          reservation_url?: string | null
+          services?: string[]
+          specialties?: string[]
+          status?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validation_note?: string | null
+          version_number: number
+          website_url?: string | null
+        }
+        Update: {
+          address_line_1?: string | null
+          address_line_2?: string | null
+          case_id?: string
+          categories?: string[]
+          city?: string | null
+          commercial_name?: string
+          contact_url?: string | null
+          country_code?: string
+          created_at?: string
+          created_by?: string | null
+          domain?: string | null
+          external_identifiers?: Json
+          id?: string
+          latitude?: number | null
+          legal_name?: string | null
+          longitude?: number | null
+          menu_url?: string | null
+          name_variants?: string[]
+          official_profiles?: Json
+          opening_hours?: Json
+          phone?: string | null
+          postal_code?: string | null
+          region?: string | null
+          reservation_url?: string | null
+          services?: string[]
+          specialties?: string[]
+          status?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validation_note?: string | null
+          version_number?: number
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_identity_versions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "entity_audit_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_observations: {
+        Row: {
+          case_id: string
+          created_at: string
+          created_by: string | null
+          field_key: string
+          id: string
+          internal_note: string | null
+          normalized_value: Json | null
+          observation_kind: string
+          observed_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_id: string | null
+          status: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          created_by?: string | null
+          field_key: string
+          id?: string
+          internal_note?: string | null
+          normalized_value?: Json | null
+          observation_kind: string
+          observed_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_id?: string | null
+          status?: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          created_by?: string | null
+          field_key?: string
+          id?: string
+          internal_note?: string | null
+          normalized_value?: Json | null
+          observation_kind?: string
+          observed_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_id?: string | null
+          status?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_observations_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "entity_audit_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_observations_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "entity_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_sources: {
+        Row: {
+          case_id: string
+          created_at: string
+          created_by: string | null
+          external_identifier: string | null
+          id: string
+          last_checked_at: string | null
+          name: string
+          source_type: string
+          status: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          created_by?: string | null
+          external_identifier?: string | null
+          id?: string
+          last_checked_at?: string | null
+          name: string
+          source_type: string
+          status?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          created_by?: string | null
+          external_identifier?: string | null
+          id?: string
+          last_checked_at?: string | null
+          name?: string
+          source_type?: string
+          status?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_sources_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "entity_audit_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auth_attempts: {
         Row: {
           action: string
@@ -1499,6 +2274,8 @@ export type Database = {
           country: string
           created_at: string
           created_by: string
+          entity_audit_question_id: string | null
+          entity_identity_version_id: string | null
           id: string
           language: string
           project_id: string
@@ -1513,6 +2290,8 @@ export type Database = {
           country?: string
           created_at?: string
           created_by: string
+          entity_audit_question_id?: string | null
+          entity_identity_version_id?: string | null
           id?: string
           language?: string
           project_id: string
@@ -1527,6 +2306,8 @@ export type Database = {
           country?: string
           created_at?: string
           created_by?: string
+          entity_audit_question_id?: string | null
+          entity_identity_version_id?: string | null
           id?: string
           language?: string
           project_id?: string
@@ -1676,11 +2457,13 @@ export type Database = {
       }
       visibility_responses: {
         Row: {
+          client_present: boolean
           confidence: number | null
           country: string
           created_at: string
           duration_ms: number | null
           error_message: string | null
+          first_mention: boolean | null
           estimated_cost: number | null
           id: string
           input_tokens: number | null
@@ -1689,20 +2472,24 @@ export type Database = {
           model_version: string | null
           needs_review: boolean
           original_response: string | null
+          ordered_position: number | null
           output_tokens: number | null
           prompt_id: string
           provider: string
           raw_metadata: Json
+          response_structure: string | null
           run_id: string
           sentiment: string | null
           status: string
         }
         Insert: {
+          client_present?: boolean
           confidence?: number | null
           country: string
           created_at?: string
           duration_ms?: number | null
           error_message?: string | null
+          first_mention?: boolean | null
           estimated_cost?: number | null
           id?: string
           input_tokens?: number | null
@@ -1711,20 +2498,24 @@ export type Database = {
           model_version?: string | null
           needs_review?: boolean
           original_response?: string | null
+          ordered_position?: number | null
           output_tokens?: number | null
           prompt_id: string
           provider: string
           raw_metadata?: Json
+          response_structure?: string | null
           run_id: string
           sentiment?: string | null
           status: string
         }
         Update: {
+          client_present?: boolean
           confidence?: number | null
           country?: string
           created_at?: string
           duration_ms?: number | null
           error_message?: string | null
+          first_mention?: boolean | null
           estimated_cost?: number | null
           id?: string
           input_tokens?: number | null
@@ -1733,10 +2524,12 @@ export type Database = {
           model_version?: string | null
           needs_review?: boolean
           original_response?: string | null
+          ordered_position?: number | null
           output_tokens?: number | null
           prompt_id?: string
           provider?: string
           raw_metadata?: Json
+          response_structure?: string | null
           run_id?: string
           sentiment?: string | null
           status?: string
@@ -1765,6 +2558,8 @@ export type Database = {
           created_by: string | null
           duration_ms: number | null
           error_summary: string | null
+          entity_audit_campaign_id: string | null
+          entity_identity_version_id: string | null
           id: string
           idempotency_key: string
           project_id: string
@@ -1779,6 +2574,8 @@ export type Database = {
           created_by?: string | null
           duration_ms?: number | null
           error_summary?: string | null
+          entity_audit_campaign_id?: string | null
+          entity_identity_version_id?: string | null
           id?: string
           idempotency_key: string
           project_id: string
@@ -1793,6 +2590,8 @@ export type Database = {
           created_by?: string | null
           duration_ms?: number | null
           error_summary?: string | null
+          entity_audit_campaign_id?: string | null
+          entity_identity_version_id?: string | null
           id?: string
           idempotency_key?: string
           project_id?: string
@@ -1873,6 +2672,76 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_entity_audit_factual_evaluation: {
+        Args: {
+          p_actual_cost_usd: number
+          p_claims: Json
+          p_evaluation_run_id: string
+          p_findings: Json
+          p_input_tokens: number
+          p_output_tokens: number
+        }
+        Returns: undefined
+      }
+      create_entity_audit_custom_question_set: {
+        Args: { p_organization_id: string; p_questions: Json }
+        Returns: string
+      }
+      create_entity_audit_intervention_proposal: {
+        Args: {
+          p_created_by: string
+          p_expected_result: string
+          p_finding_ids: string[]
+          p_hypothesis: string | null
+          p_internal_note: string | null
+          p_organization_id: string
+          p_phase: number
+          p_suggested_action: string
+          p_verified_problem: string
+        }
+        Returns: string
+      }
+      ensure_entity_audit_case: {
+        Args: {
+          p_activated_by: string | null
+          p_activation_source: string
+          p_categories?: string[]
+          p_city?: string | null
+          p_commercial_name: string
+          p_country_code?: string
+          p_domain?: string | null
+          p_legal_name?: string | null
+          p_organization_id: string
+          p_website_url?: string | null
+        }
+        Returns: string
+      }
+      fail_entity_audit_factual_evaluation: {
+        Args: { p_error_message: string; p_evaluation_run_id: string }
+        Returns: undefined
+      }
+      link_entity_audit_proposal_to_task: {
+        Args: { p_proposal_id: string; p_task_id: string }
+        Returns: undefined
+      }
+      prepare_entity_audit_campaign: {
+        Args: { p_idempotency_key: string; p_organization_id: string }
+        Returns: Json
+      }
+      reserve_entity_audit_factual_evaluation: {
+        Args: {
+          p_campaign_id: string
+          p_created_by: string
+          p_estimated_cost_usd: number
+          p_idempotency_key: string
+          p_model: string
+        }
+        Returns: Json
+      }
+      validate_entity_identity_version: {
+        Args: { p_validation_note?: string; p_version_id: string }
+        Returns: string
+      }
       admin_register_company: {
         Args: {
           p_company_name: string

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Building2, CalendarDays, CheckCircle2, Circle, CircleDot, ClipboardList, Globe2, KeyRound, Mail, RotateCcw, ScanSearch, UserRound } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, CheckCircle2, Circle, CircleDot, ClipboardList, Fingerprint, Globe2, KeyRound, Mail, RotateCcw, ScanSearch, UserRound } from "lucide-react";
 import { AuthMessage } from "@/components/auth/message";
 import { PasswordField } from "@/components/auth/password-field";
 import { SubmitButton } from "@/components/auth/submit-button";
@@ -139,6 +139,11 @@ export default async function AdminCompanyPage({ params, searchParams }: PagePro
         </div>
 
         <aside className="admin-company-secondary">
+          <section className="admin-panel admin-visibility-entry">
+            <div className="admin-section-title"><div><p>Identidad comercial</p><h2>Entity Audit</h2></div><Fingerprint size={19} /></div>
+            <p>Contrasta fuentes, prepara versiones y valida la identidad oficial del restaurante.</p>
+            <Link href={`/admin/empresas/${organization.id}/entity-audit`}>Abrir expediente <ArrowLeft size={15} /></Link>
+          </section>
           <section className="admin-panel admin-visibility-entry">
             <div className="admin-section-title"><div><p>SEO e IA</p><h2>Visibilidad de la empresa</h2></div><ScanSearch size={19} /></div>
             <p>Configura preguntas, competidores y proveedores; después ejecuta y revisa sus evidencias.</p>

@@ -95,16 +95,21 @@ export async function updateVisibilityPrompt(organizationId: string, projectId: 
     approved_at: null,
     approved_by: null,
     updated_at: new Date().toISOString(),
-  }).eq("id", promptId).eq("project_id", projectId);
+  }).eq("id", promptId).eq("project_id", projectId).is("entity_audit_question_id", null);
   if (error) go(organizationId, "error", "No se pudo actualizar la pregunta.");
   revalidatePath(base(organizationId)); revalidatePath("/app/visibilidad");
   go(organizationId, "success", "Pregunta actualizada y enviada de nuevo para aprobación.");
 }
 
 export async function runVisibilityNow(organizationId: string, projectId: string) {
-  const { userId } = await adminContext(organizationId);
+  const { supabase, userId } = await adminContext(organizationId);
+  const { data: prompts } = await supabase.from("visibility_prompts").select("id")
+    .eq("project_id", projectId).eq("status", "approved").eq("active", true)
+    .is("entity_audit_question_id", null);
+  const promptIds = prompts?.map((prompt) => prompt.id) ?? [];
+  if (!promptIds.length) go(organizationId, "error", "No hay preguntas generales aprobadas para ejecutar fuera de Entity Audit.");
   try {
-    await executeVisibilityRun({ projectId, idempotencyKey: `manual-${new Date().toISOString().slice(0, 16)}-${userId}`, triggerType: "manual", createdBy: userId });
+    await executeVisibilityRun({ projectId, promptIds, idempotencyKey: `manual-${new Date().toISOString().slice(0, 16)}-${userId}`, triggerType: "manual", createdBy: userId });
   } catch (error) { go(organizationId, "error", error instanceof Error ? error.message : "No se pudo ejecutar el análisis."); }
   revalidatePath(base(organizationId)); revalidatePath("/app/visibilidad");
   go(organizationId, "success", "Análisis terminado.");
@@ -119,6 +124,7 @@ export async function runVisibilityPrompt(organizationId: string, projectId: str
     .eq("id", promptId)
     .eq("project_id", projectId)
     .eq("status", "approved")
+    .is("entity_audit_question_id", null)
     .maybeSingle();
   if (!prompt || prompt.visibility_projects.organization_id !== organizationId) go(organizationId, "error", "La pregunta no está aprobada para esta empresa.");
   try {

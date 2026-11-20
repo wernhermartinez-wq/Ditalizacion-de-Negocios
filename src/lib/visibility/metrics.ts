@@ -9,6 +9,8 @@ export type MetricResponse = {
   clientCitations: number;
   authorityCitations: number;
   positiveClientMention: boolean;
+  orderedPosition?: number | null;
+  firstMention?: boolean | null;
 };
 
 const percent = (numerator: number, denominator: number) => denominator ? Math.round((numerator / denominator) * 1000) / 10 : 0;
@@ -25,8 +27,19 @@ export function calculateVisibilityMetrics(responses: MetricResponse[]): Visibil
   const clientMentions = mentioned.length;
   const competitorMentions = completed.reduce((sum, response) => sum + response.competitorMentions, 0);
   const totalMentions = clientMentions + competitorMentions;
+  const ordered = completed.filter((response) => response.orderedPosition != null);
+  const orderedPositions = ordered.map((response) => response.orderedPosition ?? 0);
+  const unordered = completed.filter((response) => response.firstMention != null);
+  const first = unordered.filter((response) => response.firstMention === true);
   return {
     presence: evidence(clientMentions, completed.length, mentioned.map((item) => item.id)),
+    firstMention: evidence(first.length, unordered.length, first.map((item) => item.id)),
+    orderedPosition: {
+      value: ordered.length ? Math.round((orderedPositions.reduce((sum, position) => sum + position, 0) / ordered.length) * 10) / 10 : 0,
+      numerator: orderedPositions.reduce((sum, position) => sum + position, 0),
+      denominator: ordered.length,
+      responseIds: ordered.map((item) => item.id),
+    },
     citation: evidence(cited.length, completed.length, cited.map((item) => item.id)),
     coverage: evidence(coveredPrompts.size, distinctPrompts.size, mentioned.map((item) => item.id)),
     shareOfVoice: evidence(clientMentions, totalMentions, mentioned.map((item) => item.id)),
@@ -37,5 +50,5 @@ export function calculateVisibilityMetrics(responses: MetricResponse[]): Visibil
 }
 
 export function metricLabel(key: keyof VisibilityMetrics) {
-  return ({ presence: "Presencia", citation: "Citación propia", coverage: "Cobertura", shareOfVoice: "Cuota de voz", positiveSentiment: "Sentimiento positivo", authority: "Autoridad", competitivePosition: "Posición competitiva" } as const)[key];
+  return ({ presence: "Presencia", firstMention: "Primera mención", orderedPosition: "Posición media en listas", citation: "Citación propia", coverage: "Cobertura", shareOfVoice: "Cuota de voz", positiveSentiment: "Sentimiento positivo", authority: "Autoridad", competitivePosition: "Posición competitiva" } as const)[key];
 }

@@ -55,3 +55,57 @@ export function normalizeCitations(citations: ProviderCitation[], clientDomain: 
     return [{ ...citation, domain, position: index + 1, isClientDomain: domain === ownDomain || domain.endsWith(`.${ownDomain}`), isExternalAuthority: domain.endsWith(".gov") || domain.endsWith(".edu") || domain.endsWith(".org") }];
   });
 }
+
+export type VisibilityPlacement = {
+  structure: "ordered" | "unordered" | "unknown";
+  orderedPosition: number | null;
+  firstMention: boolean | null;
+  clientPresent: boolean;
+};
+
+function firstAliasIndex(text: string, entity: EntityCandidate) {
+  const haystack = normalized(text);
+  const indexes = [entity.name, ...entity.variants]
+    .filter(Boolean)
+    .map((alias) => haystack.indexOf(normalized(alias)))
+    .filter((index) => index >= 0);
+  return indexes.length ? Math.min(...indexes) : -1;
+}
+
+export function analyzeVisibilityPlacement(text: string, entities: EntityCandidate[]): VisibilityPlacement {
+  const client = entities.find((entity) => entity.type === "client");
+  if (!client || !text.trim()) {
+    return { structure: "unknown", orderedPosition: null, firstMention: null, clientPresent: false };
+  }
+  const clientIndex = firstAliasIndex(text, client);
+  if (clientIndex < 0) {
+    return { structure: "unknown", orderedPosition: null, firstMention: false, clientPresent: false };
+  }
+
+  const lines = text.split(/\r?\n/);
+  let offset = 0;
+  for (const line of lines) {
+    const match = line.match(/^\s*(\d{1,3})[.)]\s+/);
+    if (match && clientIndex >= offset && clientIndex < offset + line.length + 1) {
+      return {
+        structure: "ordered",
+        orderedPosition: Number(match[1]),
+        firstMention: null,
+        clientPresent: true,
+      };
+    }
+    offset += line.length + 1;
+  }
+
+  const competitorIndexes = entities
+    .filter((entity) => entity.type === "competitor")
+    .map((entity) => firstAliasIndex(text, entity))
+    .filter((index) => index >= 0);
+  const firstEntityIndex = competitorIndexes.length ? Math.min(clientIndex, ...competitorIndexes) : clientIndex;
+  return {
+    structure: "unordered",
+    orderedPosition: null,
+    firstMention: clientIndex === firstEntityIndex,
+    clientPresent: true,
+  };
+}

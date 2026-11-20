@@ -1,6 +1,7 @@
 import "server-only";
 
 import type Stripe from "stripe";
+import { ensureEntityAuditCase } from "@/lib/entity-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   isDuplicateActiveSubscription,
@@ -122,6 +123,9 @@ async function persistSubscription(
     { onConflict: "organization_id" },
   );
   if (error) throw error;
+  if (accessEnabled) {
+    await ensureEntityAuditCase(admin, organizationId, userId, "subscription");
+  }
 }
 
 async function retrieveInvoiceSubscription(invoice: Stripe.Invoice) {

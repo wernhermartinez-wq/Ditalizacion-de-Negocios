@@ -60,6 +60,13 @@ export type MetricEvidence = {
 
 export type VisibilityMetrics = {
   presence: MetricEvidence;
+  firstMention: MetricEvidence;
+  orderedPosition: {
+    value: number;
+    numerator: number;
+    denominator: number;
+    responseIds: string[];
+  };
   citation: MetricEvidence;
   coverage: MetricEvidence;
   shareOfVoice: MetricEvidence;

@@ -14,8 +14,14 @@ export default async function RoadmapPage() {
   if (!userId) redirect("/login");
   const organization = await getCurrentOrganization(supabase, userId);
   if (!organization) redirect("/app/perfil?bienvenida=1");
-  const { data: tasks, error } = await supabase.from("nexaro_tasks").select("*").eq("organization_id", organization.id).order("created_at");
-  if (error) throw new Error("No se pudo cargar el plan del restaurante.");
+  const [{ data: tasks, error }, { data: authorizedProposals, error: proposalsError }] = await Promise.all([
+    supabase.from("nexaro_tasks").select("*").eq("organization_id", organization.id).order("created_at"),
+    supabase.from("entity_audit_intervention_proposals")
+      .select("id,phase,client_summary,review_status,created_at")
+      .eq("organization_id", organization.id)
+      .order("created_at", { ascending: false }),
+  ]);
+  if (error || proposalsError) throw new Error("No se pudo cargar el plan del restaurante.");
 
   const steps = assignedRestaurantRoadmapSteps(tasks ?? []);
   const current = getCurrentRestaurantStep(steps);
@@ -47,6 +53,11 @@ export default async function RoadmapPage() {
           </article>;
         })}</div>
       </section> : <section className="restaurant-route-empty"><MapPin size={27} /><div><p className="eyebrow">Próximo paso</p><h2>Nexaro está preparando tu recorrido.</h2><p>Antes de mostrar tareas genéricas, revisaremos la situación real del restaurante y activaremos sólo la primera acción necesaria.</p></div></section>}
+
+      {authorizedProposals?.length ? <section className="restaurant-approved-proposals" aria-label="Propuestas autorizadas por Nexaro">
+        <header><div><p className="eyebrow">Propuestas revisadas</p><h2>Mejoras que Nexaro recomienda valorar</h2></div><span>No alteran el avance hasta convertirse en una actuación</span></header>
+        <div>{authorizedProposals.map((proposal) => <article key={proposal.id}><span>Fase {proposal.phase}</span><p>{proposal.client_summary}</p></article>)}</div>
+      </section> : null}
 
       <section className="restaurant-phase-progress" aria-label="Avance de las seis fases de implantación">
         <header><div><p className="eyebrow">Avance general</p><h2>Las seis fases de implantación</h2></div><span>{progress.implementationComplete ? "100% completado" : `${progress.completedStages} de ${progress.totalStages} fases`}</span></header>
