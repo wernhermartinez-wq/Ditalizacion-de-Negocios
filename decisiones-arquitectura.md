@@ -207,13 +207,15 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 
 ## 13. Historial de migraciones de Supabase desincronizado
 
-**Estado:** Registrado — tenerlo en cuenta antes de usar la CLI de Supabase.
+**Estado:** Resuelto el 2026-11-20 — historial reparado y verificado (ver al final de este punto).
 
 **Contexto:** el 2026-11-20 se aplicaron a mano, pegándolas en el SQL Editor del proyecto de producción (`ccebawfpmtlgmytwwhiq`), estas 8 migraciones: las 7 de Entity Audit (`20261017190050` a `20261026070439`) y `20261120100000_grant_service_role_private_access.sql`. Además `20261120090000_add_stripe_grace_period.sql` (columna `past_due_since`) se aplicó igual. Las tablas, columnas y funciones existen y se verificaron con lecturas reales, pero **no constan en `supabase_migrations.schema_migrations`**. Además, las versiones que ya figuraban en ese historial (hasta `20260905061040`) no coinciden con los nombres de archivo de `supabase/migrations`.
 
 **Decisión / precaución:** no ejecutar `supabase db push` ni `supabase db reset --linked` sin reparar antes el historial (`supabase migration repair` o insertando las versiones a mano). De lo contrario la CLI intentará reaplicar migraciones ya hechas y fallará, o peor, reaplicará cambios.
 
-**Pendiente:** decidir si se repara el historial o si las migraciones se seguirán aplicando a mano. Mientras tanto, cada migración nueva debe verificarse contra producción con una lectura real (no basta el mensaje "Success").
+**Resolución:** se reparó el historial con un script de solo metadatos (en una transacción): se alinearon 24 versiones registradas con las de sus archivos y se registraron como aplicadas las 10 migraciones que faltaban (`create_visibility_intelligence_module`, las 7 de Entity Audit, `add_stripe_grace_period` y `grant_service_role_private_access`). La tabla `supabase_migrations.schema_migrations` tiene ahora 36 filas y coincide exactamente, versión y nombre, con los 36 archivos de `supabase/migrations` (comprobado fila a fila). Ya se puede usar la CLI de Supabase contra el proyecto de producción.
+
+**Precaución que se mantiene:** cada migración nueva debe verificarse contra producción con una lectura real (no basta el mensaje "Success"), y si se aplica a mano hay que registrarla en el historial.
 
 ---
 
@@ -243,7 +245,7 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 
 ## Puntos pendientes de decisión
 
-Los puntos 1 a 12 del análisis inicial quedaron con decisión registrada (los puntos 2, 3, 4, 6, 7, 8, 9 y 10 están implementados; el punto 1 sigue pospuesto por alcance del MVP). Abiertos a 2026-11-20: reparar el historial de migraciones (punto 13), elegir la estrategia de copias automáticas (punto 14) y las tareas de Stripe del punto 15.
+Los puntos 1 a 12 del análisis inicial quedaron con decisión registrada (los puntos 2, 3, 4, 6, 7, 8, 9 y 10 están implementados; el punto 1 sigue pospuesto por alcance del MVP). Abiertos a 2026-11-20: elegir la estrategia de copias automáticas (punto 14) y las tareas de Stripe del punto 15. El historial de migraciones (punto 13) ya está reparado.
 
 ---
 
