@@ -2,8 +2,16 @@ import "server-only";
 
 import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { subscriptionGrantsAccess } from "./state";
-import { getStripe } from "./server";
+import {
+  isDuplicateActiveSubscription,
+  isNexaroAccompanimentSubscription,
+  isOlderStripeEvent,
+  isStaleProcessingEvent,
+  isStaleInactiveReplacement,
+  nextPastDueSince,
+  subscriptionGrantsAccess,
+} from "./state";
+import { getStripe, getStripeConfig } from "./server";
 
 function idOf(value: string | { id: string } | null | undefined) {
   return typeof value === "string" ? value : value?.id ?? null;
@@ -18,30 +26,77 @@ async function persistSubscription(
   event: Stripe.Event,
   options?: {
     checkoutSessionId?: string;
-    forceAccess?: boolean;
-    forceStatus?: string;
   },
 ) {
-  const organizationId = subscription.metadata.organization_id;
-  const userId = subscription.metadata.supabase_user_id;
+  const admin = createAdminClient();
+  const { data: linkedSubscription, error: linkedError } = await admin
+    .from("stripe_subscriptions")
+    .select("organization_id, user_id")
+    .eq("stripe_subscription_id", subscription.id)
+    .maybeSingle();
+  if (linkedError) throw linkedError;
+
+  const organizationId = linkedSubscription?.organization_id ?? subscription.metadata.organization_id;
+  const userId = linkedSubscription?.user_id ?? subscription.metadata.supabase_user_id;
   if (!organizationId || !userId) {
     throw new Error(`La suscripción ${subscription.id} no contiene metadatos de Nexaro.`);
   }
 
-  const admin = createAdminClient();
+  const { data: membership, error: membershipError } = await admin
+    .from("organization_memberships")
+    .select("organization_id")
+    .eq("organization_id", organizationId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (membershipError) throw membershipError;
+  if (!membership) {
+    throw new Error(`La suscripción ${subscription.id} no pertenece a un miembro de la organización indicada.`);
+  }
+
   const { data: current, error: currentError } = await admin
     .from("stripe_subscriptions")
-    .select("last_stripe_event_created, stripe_checkout_session_id")
+    .select("last_stripe_event_created, stripe_checkout_session_id, stripe_subscription_id, access_enabled, past_due_since")
     .eq("organization_id", organizationId)
     .maybeSingle();
   if (currentError) throw currentError;
-  if ((current?.last_stripe_event_created ?? 0) > event.created) return;
+  if (isOlderStripeEvent(current?.last_stripe_event_created, event.created)) return;
 
-  const item = subscription.items.data[0];
-  const status = options?.forceStatus ?? subscription.status;
-  const accessEnabled = options?.forceAccess ?? subscriptionGrantsAccess(status);
+  const { priceId, allowTrialing } = getStripeConfig();
+  const item = subscription.items.data.find((entry) => entry.price.id === priceId);
+  if (!isNexaroAccompanimentSubscription(
+    subscription.items.data.map((entry) => entry.price.id),
+    priceId,
+    subscription.metadata.stripe_price_id,
+  )) return;
+
+  const status = subscription.status;
+  const accessEnabled = subscriptionGrantsAccess(status, allowTrialing);
   const customerId = idOf(subscription.customer);
   if (!customerId || !item?.price?.id) throw new Error("Stripe devolvió una suscripción incompleta.");
+
+  // Una cancelación tardía de una suscripción anterior no puede desactivar una
+  // suscripción nueva y activa de la misma organización.
+  if (isStaleInactiveReplacement(
+    current?.stripe_subscription_id,
+    current?.access_enabled,
+    subscription.id,
+    accessEnabled,
+  )) return;
+
+  // Segunda suscripción activa (p. ej. Checkout abierto dos veces): se conserva la
+  // primera y se cancela la duplicada para evitar un doble cobro.
+  if (isDuplicateActiveSubscription(
+    current?.stripe_subscription_id,
+    current?.access_enabled,
+    subscription.id,
+    accessEnabled,
+  )) {
+    await getStripe().subscriptions.cancel(subscription.id, { prorate: false, invoice_now: false });
+    console.error(
+      `Suscripción duplicada ${subscription.id} cancelada para la organización ${organizationId}. Revisar en Stripe si requiere reembolso.`,
+    );
+    return;
+  }
 
   const { error } = await admin.from("stripe_subscriptions").upsert(
     {
@@ -56,6 +111,11 @@ async function persistSubscription(
       access_enabled: accessEnabled,
       next_billing_at: isoFromUnix(item.current_period_end),
       cancel_at_period_end: subscription.cancel_at_period_end,
+      past_due_since: nextPastDueSince(
+        status,
+        current?.stripe_subscription_id === subscription.id ? current.past_due_since : null,
+        event.created,
+      ),
       last_stripe_event_created: event.created,
       updated_at: new Date().toISOString(),
     },
@@ -71,6 +131,10 @@ async function retrieveInvoiceSubscription(invoice: Stripe.Invoice) {
   return getStripe().subscriptions.retrieve(subscriptionId);
 }
 
+async function retrieveCurrentSubscription(subscription: Stripe.Subscription) {
+  return getStripe().subscriptions.retrieve(subscription.id);
+}
+
 async function processSupportedEvent(event: Stripe.Event) {
   switch (event.type) {
     case "checkout.session.completed": {
@@ -81,33 +145,27 @@ async function processSupportedEvent(event: Stripe.Event) {
       const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
       await persistSubscription(subscription, event, {
         checkoutSessionId: session.id,
-        forceAccess: true,
       });
       return;
     }
     case "invoice.paid": {
       const subscription = await retrieveInvoiceSubscription(event.data.object);
-      if (subscription) await persistSubscription(subscription, event, { forceAccess: true });
+      if (subscription) await persistSubscription(subscription, event);
       return;
     }
     case "invoice.payment_failed": {
       const subscription = await retrieveInvoiceSubscription(event.data.object);
-      if (subscription) {
-        await persistSubscription(subscription, event, {
-          forceAccess: false,
-          forceStatus: "payment_failed",
-        });
-      }
+      if (subscription) await persistSubscription(subscription, event);
       return;
     }
-    case "customer.subscription.updated":
-      await persistSubscription(event.data.object, event);
+    case "customer.subscription.created":
+    case "customer.subscription.updated": {
+      const subscription = await retrieveCurrentSubscription(event.data.object);
+      await persistSubscription(subscription, event);
       return;
+    }
     case "customer.subscription.deleted":
-      await persistSubscription(event.data.object, event, {
-        forceAccess: false,
-        forceStatus: "canceled",
-      });
+      await persistSubscription(event.data.object, event);
       return;
   }
 }
@@ -124,16 +182,22 @@ export async function processStripeWebhook(event: Stripe.Event) {
   if (insertError?.code === "23505") {
     const { data: previous, error } = await admin
       .from("stripe_webhook_events")
-      .select("status")
+      .select("status, received_at")
       .eq("stripe_event_id", event.id)
       .single();
     if (error) throw error;
-    if (previous.status === "completed" || previous.status === "processing") return;
-    const { error: retryError } = await admin
+    if (previous.status === "completed") return;
+    if (previous.status === "processing" && !isStaleProcessingEvent(previous.received_at)) return;
+    // Se reclama el evento solo si sigue en el mismo estado, para que dos
+    // reintentos simultáneos no lo procesen a la vez.
+    const { data: claimed, error: retryError } = await admin
       .from("stripe_webhook_events")
-      .update({ status: "processing", error_message: null })
-      .eq("stripe_event_id", event.id);
+      .update({ status: "processing", error_message: null, received_at: new Date().toISOString() })
+      .eq("stripe_event_id", event.id)
+      .eq("status", previous.status)
+      .select("stripe_event_id");
     if (retryError) throw retryError;
+    if (!claimed?.length) return;
   } else if (insertError) {
     throw insertError;
   }

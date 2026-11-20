@@ -5,6 +5,7 @@ import { AuthMessage } from "@/components/auth/message";
 import { getCurrentOrganization } from "@/lib/organizations";
 import { createClient } from "@/lib/supabase/server";
 import { getStripeEnvironment } from "@/lib/stripe/server";
+import { gracePeriodEnd, isInGracePeriod, parseGraceDays } from "@/lib/stripe/state";
 import { openStripeCustomerPortal, startStripeCheckout } from "./actions";
 
 export const metadata: Metadata = { title: "Facturación" };
@@ -34,6 +35,10 @@ export default async function BillingPage({ searchParams }: PageProps) {
     searchParams,
   ]);
 
+  const graceDays = parseGraceDays(process.env.STRIPE_PAST_DUE_GRACE_DAYS);
+  const inGrace = subscription ? isInGracePeriod(subscription.status, subscription.past_due_since, graceDays) : false;
+  const graceEnd = subscription ? gracePeriodEnd(subscription.past_due_since, graceDays) : null;
+
   return (
     <main className="page-content billing-page">
       <div className="page-heading billing-heading">
@@ -56,10 +61,12 @@ export default async function BillingPage({ searchParams }: PageProps) {
             <li><Check size={16} /> Renovación automática cada día 15</li>
             <li><Check size={16} /> Si te das de alta el día 15, el cobro es inmediato</li>
           </ul>
-          {!subscription?.access_enabled ? (
-            <form action={startStripeCheckout}><button className="button-primary" type="submit"><CreditCard size={17} /> Continuar a Checkout</button></form>
-          ) : (
+          {subscription?.access_enabled ? (
             <div className="billing-active"><Check size={17} /> Suscripción activa</div>
+          ) : subscription?.status === "past_due" ? (
+            <form action={openStripeCustomerPortal}><button className="button-primary" type="submit"><CreditCard size={17} /> Actualizar método de pago</button></form>
+          ) : (
+            <form action={startStripeCheckout}><button className="button-primary" type="submit"><CreditCard size={17} /> Continuar a Checkout</button></form>
           )}
           <small className="billing-note">Stripe gestiona los métodos de pago y la fiscalidad mediante Managed Payments. Nexaro no recibe datos de tarjeta.</small>
         </article>
@@ -69,7 +76,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
           <p className="eyebrow">Estado verificado</p>
           <h2>{subscription ? subscription.status.replaceAll("_", " ") : "Sin suscripción"}</h2>
           <dl>
-            <div><dt>Acceso</dt><dd>{subscription?.access_enabled ? "Activo" : "No activo"}</dd></div>
+            <div><dt>Acceso</dt><dd>{subscription?.access_enabled ? "Activo" : inGrace ? `Activo hasta el ${formatDate(graceEnd)} (pago pendiente)` : "No activo"}</dd></div>
             <div><dt>Próximo cobro</dt><dd>{formatDate(subscription?.next_billing_at ?? null)}</dd></div>
             <div><dt>Renovación</dt><dd>{subscription?.cancel_at_period_end ? "Se cancelará al final del periodo" : "Automática"}</dd></div>
           </dl>

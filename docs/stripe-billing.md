@@ -51,6 +51,12 @@ El endpoint lee el cuerpo sin transformar y valida `Stripe-Signature` con `STRIP
 
 La página de éxito no concede acceso. `checkout.session.completed` lo activa; un fallo de factura o una cancelación lo suspende. Los cambios posteriores de suscripción vuelven a sincronizar el estado. El Customer Portal permite cancelar o actualizar la forma de pago.
 
+### Pago fallido y periodo de gracia
+
+Un cobro rechazado pone la suscripción en `past_due`. El webhook guarda en `past_due_since` el momento del primer fallo y el acceso se mantiene durante `STRIPE_PAST_DUE_GRACE_DAYS` días (7 por defecto, máximo 30, 0 desactiva la gracia) mientras Stripe reintenta el cobro. Si Stripe confirma el pago, `past_due_since` se borra; si la gracia termina sin pago, el proxy redirige a `/app/facturacion`, donde el cliente puede actualizar su método de pago en el Customer Portal. Estados `unpaid`, `canceled`, `incomplete` o similares nunca tienen gracia. Requiere aplicar antes la migración `20261120090000_add_stripe_grace_period.sql`.
+
+Otras variables: `STRIPE_TRIAL_ACCOMPANIMENT_ENABLED` (por defecto `false`) permite que el estado `trialing` conceda acceso.
+
 Para pruebas locales se puede usar Stripe CLI:
 
 ```powershell

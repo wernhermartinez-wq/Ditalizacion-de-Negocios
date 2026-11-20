@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "./database.types";
+import { hasBillingAccess, parseGraceDays } from "@/lib/stripe/state";
 import { getSupabaseEnv } from "./env";
 
 const PUBLIC_PATHS = ["/login", "/registro", "/recuperar-acceso", "/auth"];
@@ -51,7 +52,12 @@ export async function updateSession(request: NextRequest) {
     process.env.STRIPE_BILLING_ENFORCEMENT_ENABLED === "true"
   ) {
     const userId = typeof data.claims.sub === "string" ? data.claims.sub : null;
-    if (userId) {
+    // Los administradores de plataforma (Nexaro) no se facturan a sí mismos.
+    // Si la consulta falla, no hay exención: el acceso se deniega por defecto.
+    const { data: platformAdmin } = userId
+      ? await supabase.from("platform_admins").select("user_id").eq("user_id", userId).maybeSingle()
+      : { data: null };
+    if (userId && !platformAdmin) {
       const { data: membership } = await supabase
         .from("organization_memberships")
         .select("organization_id")
@@ -62,12 +68,14 @@ export async function updateSession(request: NextRequest) {
       const { data: subscription } = membership
         ? await supabase
             .from("stripe_subscriptions")
-            .select("access_enabled")
+            .select("access_enabled, status, past_due_since")
             .eq("organization_id", membership.organization_id)
             .maybeSingle()
         : { data: null };
 
-      if (!subscription?.access_enabled) {
+      // Un pago fallido no corta el acceso al instante: Stripe reintenta el cobro
+      // y se concede un periodo de gracia (STRIPE_PAST_DUE_GRACE_DAYS).
+      if (!hasBillingAccess(subscription, parseGraceDays(process.env.STRIPE_PAST_DUE_GRACE_DAYS))) {
         return NextResponse.redirect(new URL("/app/facturacion", request.url));
       }
     }

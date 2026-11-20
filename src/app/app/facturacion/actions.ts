@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getCurrentOrganization } from "@/lib/organizations";
 import { createClient } from "@/lib/supabase/server";
 import { getNextBillingAnchor } from "@/lib/stripe/billing-cycle";
+import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/state";
 import {
   createIntegrationIdentifier,
   getAppUrl,
@@ -38,6 +39,21 @@ export async function startStripeCheckout() {
   try {
     const stripe = getStripe();
     const { priceId } = getStripeConfig();
+
+    // Evita un segundo cobro si ya hay una suscripción viva que el webhook aún no reflejó.
+    if (current?.stripe_customer_id) {
+      const existing = await stripe.subscriptions.list({
+        customer: current.stripe_customer_id,
+        status: "all",
+        limit: 20,
+      });
+      const live = existing.data.some(
+        (subscription) =>
+          LIVE_SUBSCRIPTION_STATUSES.includes(subscription.status)
+          && subscription.items.data.some((item) => item.price.id === priceId),
+      );
+      if (live) redirect("/app/facturacion?error=Ya+tienes+una+suscripción+en+curso.+Espera+unos+segundos+y+actualiza");
+    }
     const appUrl = getAppUrl();
     const anchor = getNextBillingAnchor();
     const metadata = {

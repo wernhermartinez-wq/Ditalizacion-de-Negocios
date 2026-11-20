@@ -990,6 +990,7 @@ export type Database = {
           last_stripe_event_created: number
           next_billing_at: string | null
           organization_id: string
+          past_due_since: string | null
           status: string
           stripe_checkout_session_id: string | null
           stripe_customer_id: string
@@ -1006,6 +1007,7 @@ export type Database = {
           last_stripe_event_created?: number
           next_billing_at?: string | null
           organization_id: string
+          past_due_since?: string | null
           status: string
           stripe_checkout_session_id?: string | null
           stripe_customer_id: string
@@ -1022,6 +1024,7 @@ export type Database = {
           last_stripe_event_created?: number
           next_billing_at?: string | null
           organization_id?: string
+          past_due_since?: string | null
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_customer_id?: string

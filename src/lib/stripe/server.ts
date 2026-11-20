@@ -24,6 +24,7 @@ export function getStripeEnvironment() {
 
 export function getStripeConfig() {
   const environment = getStripeEnvironment();
+  const allowTrialing = process.env.STRIPE_TRIAL_ACCOMPANIMENT_ENABLED === "true";
 
   const apiKey = required("STRIPE_API_KEY");
   if (environment === "production") {
@@ -35,7 +36,7 @@ export function getStripeConfig() {
     if (priceId !== STRIPE_PRODUCTION_PRICE_ID) {
       throw new Error("El Price ID productivo no coincide con el plan Nexaro aprobado.");
     }
-    return { apiKey, priceId, environment };
+    return { apiKey, priceId, environment, allowTrialing };
   }
 
   const priceId = required("STRIPE_TEST_PRICE_ID");
@@ -43,7 +44,7 @@ export function getStripeConfig() {
   if (priceId === STRIPE_PRODUCTION_PRICE_ID) throw new Error("El Price ID live no se admite en test.");
   if (!priceId.startsWith("price_")) throw new Error("STRIPE_TEST_PRICE_ID no es válido.");
 
-  return { apiKey, priceId, environment };
+  return { apiKey, priceId, environment, allowTrialing };
 }
 
 export function getStripe() {
