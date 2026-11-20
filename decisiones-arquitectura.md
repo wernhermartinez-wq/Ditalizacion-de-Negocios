@@ -205,10 +205,46 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 
 ---
 
-## Puntos pendientes de decisión
+## 13. Historial de migraciones de Supabase desincronizado
 
-Ninguno por ahora. Todos los puntos identificados en el análisis inicial (seguridad + abogado del diablo + fixer) quedaron con una decisión registrada (puntos 1 a 12). Los puntos 2, 3, 4, 6, 7, 8, 9 y 10 ya están implementados. El punto 1 continúa pospuesto por decisión de alcance del MVP.
+**Estado:** Registrado — tenerlo en cuenta antes de usar la CLI de Supabase.
+
+**Contexto:** el 2026-11-20 se aplicaron a mano, pegándolas en el SQL Editor del proyecto de producción (`ccebawfpmtlgmytwwhiq`), estas 8 migraciones: las 7 de Entity Audit (`20261017190050` a `20261026070439`) y `20261120100000_grant_service_role_private_access.sql`. Además `20261120090000_add_stripe_grace_period.sql` (columna `past_due_since`) se aplicó igual. Las tablas, columnas y funciones existen y se verificaron con lecturas reales, pero **no constan en `supabase_migrations.schema_migrations`**. Además, las versiones que ya figuraban en ese historial (hasta `20260905061040`) no coinciden con los nombres de archivo de `supabase/migrations`.
+
+**Decisión / precaución:** no ejecutar `supabase db push` ni `supabase db reset --linked` sin reparar antes el historial (`supabase migration repair` o insertando las versiones a mano). De lo contrario la CLI intentará reaplicar migraciones ya hechas y fallará, o peor, reaplicará cambios.
+
+**Pendiente:** decidir si se repara el historial o si las migraciones se seguirán aplicando a mano. Mientras tanto, cada migración nueva debe verificarse contra producción con una lectura real (no basta el mensaje "Success").
 
 ---
 
-*Última actualización: implementación y verificación del 2026-09-03. Si surgen nuevos puntos, se añaden como entradas numeradas siguiendo este mismo formato.*
+## 14. Copias de seguridad de la base de datos
+
+**Estado:** Implementado (copia manual); copia automática pendiente de decisión.
+
+**Contexto:** el proyecto de Supabase está en el plan Free y el panel mostraba "No backups", con un cliente que paga en producción.
+
+**Decisión:** copia lógica de solo lectura con `npm run backup:db` ([scripts/backup-database.mjs](scripts/backup-database.mjs)). Guarda cada tabla de `public` y los usuarios de Auth como JSON en la carpeta **`copias-seguridad/<AAAA-MM-DD_HHmm>/`**, con un `_resumen.json` de filas por tabla. La carpeta está en `.gitignore` porque contiene datos personales (correos, identificadores fiscales): no se sube al repositorio ni se comparte. Primera copia: `copias-seguridad/2026-11-20_0855` (54 tablas y 4 usuarios, 226 filas).
+
+**Limitaciones:** es una copia de datos, no un `pg_dump`. No incluye políticas, funciones ni permisos (esos viven en `supabase/migrations`) ni contraseñas de usuarios. Sirve para recuperar datos, no para recrear el proyecto sola.
+
+**Pendiente:** elegir entre el plan Pro de Supabase (copias diarias automáticas) o programar `npm run backup:db`.
+
+---
+
+## 15. Stripe: incidencias de facturación resueltas y pendientes
+
+**Estado:** Parcialmente resuelto.
+
+- **Resuelto:** el cobro rechazado del 15-11-2026 fue por la tarjeta prepago del cliente (límite superado); el cliente ya cambió de tarjeta. Los 4 EUR que Stripe descuenta de cada cobro son impuestos retenidos, no un cargo a revisar.
+- **Resuelto en código:** periodo de gracia ante pago fallido (`STRIPE_PAST_DUE_GRACE_DAYS`, 7 por defecto) y endurecimiento del webhook (commit `13f140f`).
+- **Pendiente:** borrar en el panel de Stripe el endpoint de webhook duplicado y desactivado (`we_1UBpkCIqsrQ2sW9Yff4iFNVM`; el activo es `we_1UBq7JIqsrQ2sW9YpPcGMtnl`). Configurar el Customer Portal para cancelación inmediata. Revisar los reintentos de cobro (Revenue recovery) para que coincidan con la gracia.
+
+---
+
+## Puntos pendientes de decisión
+
+Los puntos 1 a 12 del análisis inicial quedaron con decisión registrada (los puntos 2, 3, 4, 6, 7, 8, 9 y 10 están implementados; el punto 1 sigue pospuesto por alcance del MVP). Abiertos a 2026-11-20: reparar el historial de migraciones (punto 13), elegir la estrategia de copias automáticas (punto 14) y las tareas de Stripe del punto 15.
+
+---
+
+*Última actualización: 2026-11-20. Si surgen nuevos puntos, se añaden como entradas numeradas siguiendo este mismo formato.*

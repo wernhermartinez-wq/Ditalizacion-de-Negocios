@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "bootstrap:admin": "node --env-file-if-exists=.env.local scripts/bootstrap-platform-admin.mjs"
+    "bootstrap:admin": "node --env-file-if-exists=.env.local scripts/bootstrap-platform-admin.mjs",
+    "backup:db": "node --env-file-if-exists=.env.local scripts/backup-database.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.5",
