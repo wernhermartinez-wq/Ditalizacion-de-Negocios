@@ -221,7 +221,7 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 
 ## 14. Copias de seguridad de la base de datos
 
-**Estado:** Implementado (copia manual); copia automática pendiente de decisión.
+**Estado:** Implementado (copia manual); copia automática y prueba de restauración aplazadas.
 
 **Contexto:** el proyecto de Supabase está en el plan Free y el panel mostraba "No backups", con un cliente que paga en producción.
 
@@ -229,27 +229,32 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 
 **Limitaciones:** es una copia de datos, no un `pg_dump`. No incluye políticas, funciones ni permisos (esos viven en `supabase/migrations`) ni contraseñas de usuarios. Sirve para recuperar datos, no para recrear el proyecto sola.
 
-**Pendiente:** elegir entre el plan Pro de Supabase (copias diarias automáticas) o programar `npm run backup:db`.
+**Dimensionamiento (2026-11-21):** con un solo cliente la copia pesa 189 KB (226 filas). Unas 110 son datos de catálogo que recrean las migraciones; los datos reales irrecuperables son unas 116 filas de las 2 organizaciones. La estructura (36 migraciones) está en GitHub y lo de Stripe vive en Stripe. Por eso el plan Pro de Supabase no es urgente.
+
+**Pendiente (aplazado por decisión del 2026-11-21, no se hace ahora):**
+1. Programar `npm run backup:db` cada semana (Programador de tareas de Windows), con borrado de copias antiguas y una copia extra fuera del disco local.
+2. Escribir un script de restauración y probarlo una vez en un proyecto de Supabase gratuito de prueba. Hasta entonces la copia no está verificada. Limitación conocida: las contraseñas de los usuarios no se restauran (usarían "recuperar acceso").
+3. Reconsiderar el plan Pro (copias diarias automáticas) cuando haya varios clientes de pago o una pérdida de datos cueste más de unas horas de trabajo.
 
 ---
 
 ## 15. Stripe: incidencias de facturación resueltas y pendientes
 
-**Estado:** Parcialmente resuelto.
+**Estado:** Resuelto el 2026-11-21.
 
 - **Resuelto:** el cobro rechazado del 15-11-2026 fue por la tarjeta prepago del cliente (límite superado); el cliente ya cambió de tarjeta. Los 4 EUR que Stripe descuenta de cada cobro son impuestos retenidos, no un cargo a revisar.
 - **Resuelto en código:** periodo de gracia ante pago fallido (`STRIPE_PAST_DUE_GRACE_DAYS`, 7 por defecto) y endurecimiento del webhook (commit `13f140f`).
 - **Resuelto (2026-11-20):** borrado el endpoint de webhook duplicado y desactivado (`we_1UBpkCIqsrQ2sW9Yff4iFNVM`). Queda un único destino activo, `we_1UBq7JIqsrQ2sW9YpPcGMtnl`, con los 5 eventos que usa la app (comprobado por API).
 - **Decidido (2026-11-21): el Customer Portal se queda como está.** La configuración predeterminada (`bpc_1UBqXM…`) permite actualizar métodos de pago, ver facturas y cancelar la suscripción **al final del periodo**, con prorrateo ninguno y sin cambio de plan. No se cambia a cancelación inmediata, porque no cierra el uso gratuito (quien se da de alta puede cancelar justo antes del día 15 y tampoco paga) y en cambio quita al cliente que ya pagó los días que le quedaban, sin reembolso. Con cancelación al final del periodo, el cliente conserva el acceso hasta el siguiente día 15 y la app muestra "Se cancelará al final del periodo".
-- **Decisión de negocio abierta:** la regla de cobro (acceso inmediato y primer cobro el siguiente día 15) deja hasta unos 30 días de uso gratuito a quien se da de alta justo después del 15 y cancela antes del cobro. Opciones: aceptarlo como prueba gratuita (Stripe ya guarda la tarjeta, así que quien no cancele paga el día 15) o cobrar al alta la parte proporcional o un importe mínimo (habría que cambiar el Checkout).
-- **Pendiente:** revisar los reintentos de cobro (Revenue recovery) en Stripe para que reintenten durante unos 7 días, igual que el periodo de gracia de la app.
+- **Decidido (2026-11-21): la regla de cobro queda igual** (acceso inmediato y primer cobro el siguiente día 15), aunque deje hasta unos 30 días de uso gratuito a quien se da de alta justo después del 15 y cancela antes del cobro. Se acepta como prueba gratuita de facto: Stripe ya guarda la tarjeta, así que quien no cancele paga el día 15. No se cobra nada al alta y no hay que cambiar el Checkout.
+- **Verificado (2026-11-21): reintentos de cobro, sin cambios.** Configuración actual de Stripe: la suscripción pasa a vencida (`past_due`) al primer fallo; reintentos inteligentes (Smart Retries) de tarjeta hasta 8 veces en 2 semanas; si fallan todos, se cancela la suscripción y la factura queda vencida. Encaja con la app: el acceso se mantiene 7 días desde el primer fallo (`STRIPE_PAST_DUE_GRACE_DAYS`) y, pasada la gracia, el cliente ve el botón de actualizar su tarjeta mientras Stripe sigue reintentando; si el cobro entra, `invoice.paid` devuelve el acceso solo. No hace falta acortar los reintentos a 1 semana.
 
 ---
 
 ## Puntos pendientes de decisión
 
-Los puntos 1 a 12 del análisis inicial quedaron con decisión registrada (los puntos 2, 3, 4, 6, 7, 8, 9 y 10 están implementados; el punto 1 sigue pospuesto por alcance del MVP). Abiertos a 2026-11-20: elegir la estrategia de copias automáticas (punto 14) y, del punto 15, los reintentos de cobro en Stripe y la decisión de negocio sobre el uso gratuito hasta el día 15. El historial de migraciones (punto 13) ya está reparado, y el webhook duplicado y el Customer Portal ya están cerrados.
+Los puntos 1 a 12 del análisis inicial quedaron con decisión registrada (los puntos 2, 3, 4, 6, 7, 8, 9 y 10 están implementados; el punto 1 sigue pospuesto por alcance del MVP). Aplazado por decisión del 2026-11-21: copia automática semanal, prueba de restauración y reconsiderar el plan Pro de Supabase (punto 14). El punto 15 (Stripe) queda cerrado: webhook duplicado borrado, Customer Portal sin cambios, reintentos de cobro verificados y regla de cobro mantenida. El historial de migraciones (punto 13) ya está reparado.
 
 ---
 
-*Última actualización: 2026-11-20. Si surgen nuevos puntos, se añaden como entradas numeradas siguiendo este mismo formato.*
+*Última actualización: 2026-11-21. Si surgen nuevos puntos, se añaden como entradas numeradas siguiendo este mismo formato.*
