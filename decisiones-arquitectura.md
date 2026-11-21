@@ -239,13 +239,16 @@ Cada decisión tiene: contexto (por qué surgió), la decisión en sí, lo que i
 
 - **Resuelto:** el cobro rechazado del 15-11-2026 fue por la tarjeta prepago del cliente (límite superado); el cliente ya cambió de tarjeta. Los 4 EUR que Stripe descuenta de cada cobro son impuestos retenidos, no un cargo a revisar.
 - **Resuelto en código:** periodo de gracia ante pago fallido (`STRIPE_PAST_DUE_GRACE_DAYS`, 7 por defecto) y endurecimiento del webhook (commit `13f140f`).
-- **Pendiente:** borrar en el panel de Stripe el endpoint de webhook duplicado y desactivado (`we_1UBpkCIqsrQ2sW9Yff4iFNVM`; el activo es `we_1UBq7JIqsrQ2sW9YpPcGMtnl`). Configurar el Customer Portal para cancelación inmediata. Revisar los reintentos de cobro (Revenue recovery) para que coincidan con la gracia.
+- **Resuelto (2026-11-20):** borrado el endpoint de webhook duplicado y desactivado (`we_1UBpkCIqsrQ2sW9Yff4iFNVM`). Queda un único destino activo, `we_1UBq7JIqsrQ2sW9YpPcGMtnl`, con los 5 eventos que usa la app (comprobado por API).
+- **Decidido (2026-11-21): el Customer Portal se queda como está.** La configuración predeterminada (`bpc_1UBqXM…`) permite actualizar métodos de pago, ver facturas y cancelar la suscripción **al final del periodo**, con prorrateo ninguno y sin cambio de plan. No se cambia a cancelación inmediata, porque no cierra el uso gratuito (quien se da de alta puede cancelar justo antes del día 15 y tampoco paga) y en cambio quita al cliente que ya pagó los días que le quedaban, sin reembolso. Con cancelación al final del periodo, el cliente conserva el acceso hasta el siguiente día 15 y la app muestra "Se cancelará al final del periodo".
+- **Decisión de negocio abierta:** la regla de cobro (acceso inmediato y primer cobro el siguiente día 15) deja hasta unos 30 días de uso gratuito a quien se da de alta justo después del 15 y cancela antes del cobro. Opciones: aceptarlo como prueba gratuita (Stripe ya guarda la tarjeta, así que quien no cancele paga el día 15) o cobrar al alta la parte proporcional o un importe mínimo (habría que cambiar el Checkout).
+- **Pendiente:** revisar los reintentos de cobro (Revenue recovery) en Stripe para que reintenten durante unos 7 días, igual que el periodo de gracia de la app.
 
 ---
 
 ## Puntos pendientes de decisión
 
-Los puntos 1 a 12 del análisis inicial quedaron con decisión registrada (los puntos 2, 3, 4, 6, 7, 8, 9 y 10 están implementados; el punto 1 sigue pospuesto por alcance del MVP). Abiertos a 2026-11-20: elegir la estrategia de copias automáticas (punto 14) y las tareas de Stripe del punto 15. El historial de migraciones (punto 13) ya está reparado.
+Los puntos 1 a 12 del análisis inicial quedaron con decisión registrada (los puntos 2, 3, 4, 6, 7, 8, 9 y 10 están implementados; el punto 1 sigue pospuesto por alcance del MVP). Abiertos a 2026-11-20: elegir la estrategia de copias automáticas (punto 14) y, del punto 15, los reintentos de cobro en Stripe y la decisión de negocio sobre el uso gratuito hasta el día 15. El historial de migraciones (punto 13) ya está reparado, y el webhook duplicado y el Customer Portal ya están cerrados.
 
 ---
 
